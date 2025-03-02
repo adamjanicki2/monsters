@@ -1,0 +1,29 @@
+:root {
+  --breakpoint: 768px;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  overflow-x: hidden;
+}
+
+code {
+  background-color: #eee;
+  color: #ff4136;
+  font-size: 90%;
+  border-radius: 4px;
+  padding: 0 0.25rem;
+}
+
+.page-title-text {
+  font-size: calc(2.5rem + 1vw);
+  font-weight: 700;
+}
+
+.bordering {
+  border: 2px solid green;
+}
