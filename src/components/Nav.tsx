@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { TripleFade as Hamburger } from "@adamjanicki/ui";
+import { TripleFlip as Hamburger } from "@adamjanicki/ui";
 import "src/components/nav.css";
 import Link, { UnstyledLink } from "src/components/Link";
 import { useLocation } from "react-router";
@@ -25,10 +25,10 @@ const Nav = () => {
   );
 
   return (
-    <nav className="flex items-center justify-between w-100 nav pv2 ph4">
+    <nav className="flex items-center justify-between w-100 pv2 ph4">
       <div className="flex items-center justify-between bar-container">
-        <UnstyledLink className="nav-title" to="/">
-          React Skeleton
+        <UnstyledLink className="flex" to="/">
+          <img src="/monsters/logo.svg" width="36px" height="36px" />
         </UnstyledLink>
         <div className="mobile">
           <Hamburger open={open} onClick={() => setOpen(!open)} />

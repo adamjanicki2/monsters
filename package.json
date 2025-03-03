@@ -1,10 +1,10 @@
 {
-  "name": "react-skeleton",
+  "name": "monsters",
   "version": "0.1.0",
-  "homepage": "https://adamjanicki.xyz/react-skeleton",
+  "homepage": "https://adamjanicki.xyz/monsters",
   "private": true,
   "dependencies": {
-    "@adamjanicki/ui": "^1.5.0",
+    "@adamjanicki/ui": "^1.5.4",
     "react": ">=18",
     "react-dom": ">=18",
     "react-router": "^7.1.5",
