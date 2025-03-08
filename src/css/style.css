@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Funnel+Sans:ital,wght@0,300..800;1,300..800&display=swap");
+
 :root {
   --breakpoint: 768px;
   --ajui-link-color: #d10711;
@@ -5,7 +7,8 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-family: "Funnel Sans", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
@@ -18,6 +21,16 @@ body {
   font-weight: 700;
 }
 
+.home-title-text {
+  font-size: calc(3rem + 4vw);
+  font-weight: 800;
+}
+
+.home-description {
+  font-weight: 500;
+  font-size: 1.25rem;
+}
+
 .bordering {
-  border: 2px solid green;
+  border: 2px solid red;
 }
