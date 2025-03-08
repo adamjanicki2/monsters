@@ -4,12 +4,8 @@ nav {
   top: 0;
   box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.1);
   z-index: 1000;
-  background-color: #8d0b0b;
-  color: white;
-}
-
-nav * {
-  color: white;
+  background-color: #f9f9ff;
+  color: black;
 }
 
 .link-container {
@@ -23,7 +19,7 @@ nav * {
 }
 
 .navlink {
-  color: white;
+  color: black;
   font-weight: 600;
 }
 

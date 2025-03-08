@@ -28,7 +28,7 @@ const Nav = () => {
     <nav className="flex items-center justify-between w-100 pv2 ph4">
       <div className="flex items-center justify-between bar-container">
         <UnstyledLink className="flex" to="/">
-          <img src="/monsters/logo.svg" width="36px" height="36px" />
+          <img src="/monsters/logo.svg" width="40px" height="40px" />
         </UnstyledLink>
         <div className="mobile">
           <Hamburger open={open} onClick={() => setOpen(!open)} />
