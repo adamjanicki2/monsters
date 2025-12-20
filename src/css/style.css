@@ -1,24 +1,23 @@
 @import url("https://fonts.googleapis.com/css2?family=Funnel+Sans:ital,wght@0,300..800;1,300..800&display=swap");
 
 :root {
-  --breakpoint: 768px;
   --ajui-link-color: #d10711;
 }
 
 body {
-  margin: 0;
   font-family: "Funnel Sans", -apple-system, BlinkMacSystemFont,
     "Helvetica Neue", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
   overflow-x: hidden;
   background-color: #f4f4ff;
 }
 
+p {
+  line-height: 1.5;
+}
+
 .page-title-text {
-  font-size: calc(2.5rem + 1vw);
-  font-weight: 700;
+  font-size: calc(28px + 1vw);
 }
 
 .home-title-text {

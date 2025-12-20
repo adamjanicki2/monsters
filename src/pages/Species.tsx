@@ -1,6 +1,6 @@
 import { Spinner } from "@adamjanicki/ui";
 import JsonTree from "src/components/JsonTree";
-import PageWrapper from "src/components/PageWrapper";
+import Page from "src/components/Page";
 import usePokemon from "src/hooks/usePokemon";
 
 type Props = {
@@ -8,12 +8,12 @@ type Props = {
   name: string;
 };
 
-export default function Species({ name, dexNo }: Props) {
+export default function Species({ name }: Props) {
   const { pokemon } = usePokemon(name);
 
   return (
-    <PageWrapper title={name}>
+    <Page title={name}>
       {pokemon ? <JsonTree>{pokemon}</JsonTree> : <Spinner />}
-    </PageWrapper>
+    </Page>
   );
 }

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { TripleFlip as Hamburger } from "@adamjanicki/ui";
-import "src/components/nav.css";
-import Link, { UnstyledLink } from "src/components/Link";
 import { useLocation } from "react-router";
+import { Box, TripleFade as Hamburger, ui } from "@adamjanicki/ui";
+import Link, { UnstyledLink } from "src/components/Link";
+import "src/components/nav.css";
 
 type NavlinkProps = {
   to: string;
   children: React.ReactNode;
 };
 
-const Nav = () => {
+export default function Nav() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const closeMenu = () => setOpen(false);
@@ -19,29 +19,34 @@ const Nav = () => {
   }, [pathname]);
 
   const Navlink = (props: NavlinkProps) => (
-    <li className="navlink-li">
-      <Link className="navlink" onClick={closeMenu} {...props} />
-    </li>
+    <Link
+      vfx={{ width: "full", fontWeight: 5, color: "default" }}
+      style={{ whiteSpace: "nowrap" }}
+      onClick={closeMenu}
+      {...props}
+    />
   );
 
   return (
-    <nav className="flex items-center justify-between w-100 pv2 ph4">
-      <div className="flex items-center justify-between bar-container">
-        <UnstyledLink className="flex" to="/">
+    <ui.nav vfx={{ paddingY: "s", paddingX: "l" }}>
+      <Box
+        vfx={{ axis: "x", align: "center", justify: "between" }}
+        className="bar-container"
+      >
+        <UnstyledLink to="/">
           <img src="/monsters/logo.svg" width="40px" height="40px" alt="" />
         </UnstyledLink>
-        <div className="mobile">
+        <Box className="mobile">
           <Hamburger open={open} onClick={() => setOpen(!open)} />
-        </div>
-      </div>
-      <ul
-        className="flex items-center desktop link-container ma0"
-        style={{ display: open ? "flex" : undefined }}
+        </Box>
+      </Box>
+      <Box
+        className="desktop navlink-container"
+        // force display to be open on mobile when hamburger is toggled
+        style={open ? { display: "flex" } : undefined}
       >
         <Navlink to="/">Home</Navlink>
-      </ul>
-    </nav>
+      </Box>
+    </ui.nav>
   );
-};
-
-export default Nav;
+}

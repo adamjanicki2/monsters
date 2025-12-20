@@ -19,7 +19,7 @@ export const types = [
   "fairy",
 ] as const;
 
-export type Type = typeof types[number];
+export type Type = (typeof types)[number];
 export type Ability = {
   name: string;
   hidden: boolean;

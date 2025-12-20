@@ -1026,4 +1026,4 @@ export const pokemon = [
   "Pecharunt",
 ] as const;
 
-export type Pokemon = typeof pokemon[number];
+export type Pokemon = (typeof pokemon)[number];

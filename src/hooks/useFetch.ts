@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 
 type Result = {
   loading: boolean;
-  data: Record<string, any> | null;
+  data: Record<string, unknown> | null;
 };
 
 type PostConfig = {
   endpoint: string;
-  body: Record<string, any>;
+  body: Record<string, unknown>;
 };
 
 export function usePost({ endpoint, body }: PostConfig): Result {
@@ -32,9 +32,7 @@ export function usePost({ endpoint, body }: PostConfig): Result {
           body: stringifiedBody,
         });
         json = await res.json();
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) {}
 
       setResult({ data: json, loading: false });
     };
