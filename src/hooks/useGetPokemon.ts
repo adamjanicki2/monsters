@@ -1,12 +1,9 @@
-import { usePost } from "src/hooks/useFetch";
+import useQuery from "src/hooks/useQuery";
+import type { Pokemon } from "@favware/graphql-pokemon";
 
-export default function usePokemon(name: string) {
-  name = name.toLowerCase();
-  const { loading, data } = usePost({
-    endpoint: "https://graphqlpokemon.favware.tech/v8",
-    body: {
-      query: `
-      {
+export default function useGetPokemon(name: string) {
+  const query = `
+    {
         getPokemon(pokemon: ${name}) {
             backSprite
             baseForme
@@ -71,11 +68,13 @@ export default function usePokemon(name: string) {
             legendary
         }
         }
-    `,
-    },
-  });
+  `;
 
-  const pokemon = data?.data?.getPokemon;
+  const { data, loading, error } = useQuery<"getPokemon">(query);
 
-  return { pokemon, loading };
+  return {
+    pokemon: data?.getPokemon as Pokemon | undefined,
+    loading,
+    error,
+  };
 }

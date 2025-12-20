@@ -1,19 +1,38 @@
-import { Spinner } from "@adamjanicki/ui";
+import { Alert, assertDefined, Spinner } from "@adamjanicki/ui";
+import { useParams } from "react-router";
 import JsonTree from "src/components/JsonTree";
 import Page from "src/components/Page";
-import usePokemon from "src/hooks/usePokemon";
+import useGetPokemon from "src/hooks/useGetPokemon";
 
-type Props = {
-  dexNo: number;
-  name: string;
-};
-
-export default function Species({ name }: Props) {
-  const { pokemon } = usePokemon(name);
+export default function Species() {
+  const params = useParams<{ name: string }>();
+  const name = assertDefined(params.name);
+  const data = useGetPokemon(name);
 
   return (
-    <Page title={name}>
-      {pokemon ? <JsonTree>{pokemon}</JsonTree> : <Spinner />}
+    <Page title={data.pokemon?.key || name}>
+      <InnerContent {...data} name={name} />
     </Page>
   );
+}
+
+function InnerContent({
+  pokemon,
+  loading,
+  error,
+  name,
+}: ReturnType<typeof useGetPokemon> & { name: string }) {
+  if (loading) {
+    return <Spinner />;
+  }
+
+  if (error || !pokemon) {
+    return (
+      <Alert type="error">
+        {error || `No data could be found for '${name}'`}
+      </Alert>
+    );
+  }
+
+  return <JsonTree>{pokemon}</JsonTree>;
 }
