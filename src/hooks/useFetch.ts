@@ -1,46 +1,46 @@
-import { useEffect, useRef, useState } from "react";
-
-const base = "https://pokeapi.co/api/v2";
+import { useEffect, useState } from "react";
 
 type Result = {
   loading: boolean;
   data: Record<string, any> | null;
 };
 
-export default function useFetch(slug: string): Result {
-  const url = base + slug;
-  const controllerRef = useRef<AbortController | null>(null);
+type PostConfig = {
+  endpoint: string;
+  body: Record<string, any>;
+};
 
+export function usePost({ endpoint, body }: PostConfig): Result {
   const [result, setResult] = useState<Result>({
     data: null,
     loading: true,
   });
 
+  const stringifiedBody = JSON.stringify(body);
+
   useEffect(() => {
     const executeSearch = async () => {
       setResult((prev) => ({ ...prev, loading: true }));
-      if (controllerRef.current) {
-        controllerRef.current.abort();
-        controllerRef.current = null;
-      }
-
-      controllerRef.current = new AbortController();
 
       let json = null;
       try {
-        const res = await fetch(url, {
-          signal: controllerRef.current.signal,
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: stringifiedBody,
         });
         json = await res.json();
-      } catch (error: any) {
-        if (error?.name === "AbortError") return;
+      } catch (e) {
+        console.error(e);
       }
 
       setResult({ data: json, loading: false });
     };
 
     executeSearch();
-  }, [url]);
+  }, [endpoint, stringifiedBody]);
 
   return result;
 }

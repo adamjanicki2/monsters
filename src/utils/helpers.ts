@@ -12,3 +12,10 @@ export function slugifyName(name: string) {
 
   return slug.replace(/[^a-z0-9-]/g, "");
 }
+
+export function titlize(str: string) {
+  return str
+    .split("-")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(" ");
+}

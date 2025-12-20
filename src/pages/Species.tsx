@@ -1,5 +1,7 @@
+import { Spinner } from "@adamjanicki/ui";
+import JsonTree from "src/components/JsonTree";
 import PageWrapper from "src/components/PageWrapper";
-import useFetch from "src/hooks/useFetch";
+import usePokemon from "src/hooks/usePokemon";
 
 type Props = {
   dexNo: number;
@@ -7,14 +9,11 @@ type Props = {
 };
 
 export default function Species({ name, dexNo }: Props) {
-  const { data } = useFetch(`/pokemon/${dexNo}`);
+  const { pokemon } = usePokemon(name);
 
   return (
     <PageWrapper title={name}>
-      <code>{name}</code>
-      <pre>
-        <code>{JSON.stringify(data || {})}</code>
-      </pre>
+      {pokemon ? <JsonTree>{pokemon}</JsonTree> : <Spinner />}
     </PageWrapper>
   );
 }
