@@ -149,6 +149,14 @@ export function convertToPokemonStruct(
       : pokemon.legendary
       ? "legendary"
       : null,
+    type: [
+      pokemon.types[0].name.toLowerCase(),
+      pokemon.types[1]?.name?.toLowerCase(),
+    ].filter(Boolean) as unknown as Pokemon["type"],
+    catchRate: [
+      pokemon.catchRate!.base,
+      pokemon.catchRate!.percentageWithOrdinaryPokeballAtFullHealth,
+    ],
   };
 }
 
@@ -158,4 +166,15 @@ export function formatMeters(m: number) {
 
 export function formatKg(kg: number) {
   return `${kg.toFixed(1)} kg`;
+}
+
+export function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+export function padDexNumber(dexNo: number): string {
+  const str = `${dexNo}`;
+  const missingChars = 3 - str.length;
+
+  return "0".repeat(missingChars) + str;
 }

@@ -7,7 +7,9 @@
 .page-width {
   width: 70%;
 }
-
+.type-section {
+  width: min(450px, 100%);
+}
 @media only screen and (max-width: 820px) {
   .mobile {
     display: flex;
@@ -15,7 +17,8 @@
   .desktop {
     display: none;
   }
-  .page-width {
+  .page-width,
+  .type-section {
     width: 100%;
   }
 }

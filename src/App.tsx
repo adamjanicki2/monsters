@@ -5,7 +5,7 @@ import Footer from "src/components/Footer";
 import Nav from "src/components/Nav";
 import Home from "src/pages/Home";
 import NotFound from "src/pages/NotFound";
-import ViewPokemon from "src/pages/view/ViewPokemon";
+import ViewPokemon from "src/pages/ViewPokemon";
 
 export const client = new ApolloClient({
   link: new HttpLink({

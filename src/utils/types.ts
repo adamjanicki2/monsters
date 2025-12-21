@@ -58,6 +58,8 @@ type Pokemon = {
     readonly none: readonly Type[];
   };
   readonly rarity: Optional<Rarity>;
+  readonly type: readonly [Type] | readonly [Type, Type];
+  readonly catchRate: readonly [number, string];
 };
 
 export type {
