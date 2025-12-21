@@ -5,16 +5,17 @@ import Footer from "src/components/Footer";
 import Nav from "src/components/Nav";
 import Home from "src/pages/Home";
 import NotFound from "src/pages/NotFound";
-import Species from "src/pages/Species";
+import ViewPokemon from "src/pages/ViewPokemon";
 
 export const client = new ApolloClient({
   link: new HttpLink({
     uri: "https://graphqlpokemon.favware.tech/v8",
   }),
   cache: new InMemoryCache(),
+  // will default to cache-first policy
   defaultOptions: {
     watchQuery: {
-      fetchPolicy: "cache-first",
+      fetchPolicy: "no-cache",
     },
   },
 });
@@ -26,7 +27,7 @@ const App = () => {
         <Nav />
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/dex/:name" element={<Species />} />
+          <Route path="/dex/:slug" element={<ViewPokemon />} />
           {/* Make sure this is the last route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

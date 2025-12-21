@@ -20,11 +20,17 @@ function formatError(error?: ErrorLike) {
   return undefined;
 }
 
-export default function useQuery<T extends QueryOperation>(
-  gqlQuery: string
-): Response<T> {
-  const query = gql(gqlQuery);
-  const { loading, error, data } = useApolloQuery<GQLResponse<T>>(query);
-  console.log({ data });
+type Config = {
+  query: string;
+  skip?: boolean;
+};
+
+export default function useQuery<T extends QueryOperation>({
+  query,
+  skip,
+}: Config): Response<T> {
+  const { loading, error, data } = useApolloQuery<GQLResponse<T>>(gql(query), {
+    skip,
+  });
   return { loading, error: formatError(error), data };
 }

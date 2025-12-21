@@ -1,50 +1,72 @@
-export const types = [
-  "normal",
-  "fighting",
-  "flying",
-  "poison",
-  "ground",
-  "rock",
-  "bug",
-  "ghost",
-  "steel",
-  "fire",
-  "water",
-  "grass",
-  "electric",
-  "psychic",
-  "ice",
-  "dragon",
-  "dark",
-  "fairy",
-] as const;
+import type { PokemonKey, Type, Stat } from "src/utils/pokemon";
 
-export type Type = (typeof types)[number];
-export type Ability = {
-  name: string;
-  hidden: boolean;
+type Optional<T> = T | null | undefined;
+
+type Ability = {
+  readonly key: string;
+  readonly name: string;
+  readonly shortDesc: string;
 };
 
-export type Pokemon = {
-  images: {
-    regular: string;
-    shiny: string;
+type Rarity = "mythical" | "legendary";
+type AttackerType = "physical" | "special";
+
+type PokemonFragment = {
+  readonly key: PokemonKey;
+  readonly sprite: string;
+  readonly shinySprite: string;
+  readonly evolutionLevel: Optional<string>;
+};
+
+type Pokemon = {
+  readonly key: PokemonKey;
+  readonly name: string;
+  readonly desc: string;
+  readonly abilities: {
+    readonly first: Ability;
+    readonly second: Optional<Ability>;
+    readonly hidden: Optional<Ability>;
   };
-  stats: {
-    hp: number;
-    atk: number;
-    spAtk: number;
-    def: number;
-    spDef: number;
-    spe: number;
+  readonly attackerType: AttackerType;
+  readonly baseStats: Record<Stat, number>;
+  readonly baseTotal: number;
+  readonly effectiveBaseTotal: number;
+  readonly evolutionLevel: Optional<string>;
+  readonly preevolutions: readonly PokemonFragment[];
+  readonly evolutions: readonly PokemonFragment[];
+  readonly evYields: Record<Stat, number>;
+  readonly flavorText: {
+    readonly flavor: string;
+    readonly game: string;
   };
-  height: number;
-  weight: number;
-  generation: number;
-  description: string;
-  captureRate: number;
-  abilities: Ability[];
-  legendary: boolean;
-  mythical: boolean;
-  types: Type[];
+  readonly gender: Optional<{
+    readonly male: string;
+    readonly female: string;
+  }>;
+  readonly height: number;
+  readonly weight: number;
+  readonly dexNumber: number;
+  readonly variants: PokemonKey[];
+  readonly sprite: string;
+  readonly shinySprite: string;
+  readonly weaknesses: {
+    readonly quad: readonly Type[];
+    readonly double: readonly Type[];
+    readonly normal: readonly Type[];
+    readonly half: readonly Type[];
+    readonly quarter: readonly Type[];
+    readonly none: readonly Type[];
+  };
+  readonly rarity: Optional<Rarity>;
+};
+
+export type {
+  PokemonKey,
+  Pokemon,
+  Type,
+  AttackerType,
+  Rarity,
+  PokemonFragment,
+  Ability,
+  Stat,
 };
