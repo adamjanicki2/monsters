@@ -53,8 +53,6 @@ function computeWeaknesses(
   const map1 = buildMultiplierMap(type1);
   const map2 = buildMultiplierMap(type2);
 
-  console.log({ map1, map2 });
-
   const weaknesses: Record<keyof Pokemon["weaknesses"], Type[]> = {
     quad: [],
     double: [],
@@ -152,4 +150,12 @@ export function convertToPokemonStruct(
       ? "legendary"
       : null,
   };
+}
+
+export function formatMeters(m: number) {
+  return `${m.toFixed(1)} m`;
+}
+
+export function formatKg(kg: number) {
+  return `${kg.toFixed(1)} kg`;
 }

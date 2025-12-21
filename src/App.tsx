@@ -5,7 +5,7 @@ import Footer from "src/components/Footer";
 import Nav from "src/components/Nav";
 import Home from "src/pages/Home";
 import NotFound from "src/pages/NotFound";
-import ViewPokemon from "src/pages/ViewPokemon";
+import ViewPokemon from "src/pages/view/ViewPokemon";
 
 export const client = new ApolloClient({
   link: new HttpLink({
@@ -13,11 +13,6 @@ export const client = new ApolloClient({
   }),
   cache: new InMemoryCache(),
   // will default to cache-first policy
-  defaultOptions: {
-    watchQuery: {
-      fetchPolicy: "no-cache",
-    },
-  },
 });
 
 const App = () => {

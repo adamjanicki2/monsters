@@ -37,9 +37,12 @@ export default function Page({
         align: "center",
         width: "full",
         paddingBottom: "xl",
+        marginX: "auto",
+        paddingX: "m",
         ...vfx,
       }}
       style={{ minHeight: "70vh", ...style }}
+      className="page-width bordering"
     >
       {title && (
         <ui.h1

@@ -1053,9 +1053,9 @@ export const stats = [
   "hp",
   "attack",
   "defense",
-  "speed",
-  "specialdefense",
   "specialattack",
+  "specialdefense",
+  "speed",
 ] as const;
 
 export type Stat = (typeof stats)[number];
