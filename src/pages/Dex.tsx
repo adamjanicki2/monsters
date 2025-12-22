@@ -129,10 +129,10 @@ export default function Dex() {
                 axis: "x",
                 align: "center",
                 justify: "between",
+                wrap: true,
                 width: "full",
                 color: "inherit",
-                paddingY: "xs",
-                paddingX: "m",
+                padding: "m",
                 borderTop: rowIndex > 0,
               }}
             >
@@ -144,11 +144,14 @@ export default function Dex() {
                 <ui.strong vfx={{ fontSize: "m" }} style={{ width: "12ch" }}>
                   {name}
                 </ui.strong>
-                <Box vfx={{ axis: "x", gap: "xs", align: "center" }}>
-                  {mon.type.map((type) => (
-                    <TypeBadge type={type} key={type} />
-                  ))}
-                </Box>
+              </Box>
+              <Box
+                vfx={{ axis: "x", gap: "xs", align: "center" }}
+                style={{ flex: 1 }}
+              >
+                {mon.type.map((type) => (
+                  <TypeBadge type={type} key={type} />
+                ))}
               </Box>
               <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
                 <Tooltip offset={4} tooltipContent={tooltipContent}>

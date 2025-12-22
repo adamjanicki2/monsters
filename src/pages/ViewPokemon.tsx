@@ -212,7 +212,10 @@ function MainGrid({ pokemon }: { pokemon: Pokemon }) {
         align: "start",
       }}
     >
-      <Box vfx={{ axis: "y", gap: "l" }} style={{ flex: 1, minWidth: 400 }}>
+      <Box
+        vfx={{ axis: "y", gap: "l" }}
+        style={{ flex: 1, minWidth: "min(400px, 100%)" }}
+      >
         <StatsSection pokemon={pokemon} />
         <FlavorSection pokemon={pokemon} />
       </Box>
