@@ -14,7 +14,7 @@ import Page from "src/components/Page";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
 import { getProperName, stats, types } from "src/utils/pokemon";
-import type { Pokemon, Type } from "src/utils/types";
+import type { Pokemon, Type, Stat } from "src/utils/types";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import TypeBadge from "src/components/TypeBadge";
 
@@ -119,8 +119,17 @@ function IntroInfo({ pokemon }: { pokemon: Pokemon }) {
                 </ui.em>
               </ui.span>,
             ],
-            ["Base Total", String(pokemon.baseTotal)],
-            ["Effective Total", String(pokemon.effectiveBaseTotal)],
+            [
+              "EVs",
+              Object.entries(pokemon.evYields)
+                .map(([stat, value]) => {
+                  if (value >= 1)
+                    return `${value} ${STAT_LABELS[stat as Stat]}`;
+                  else return "";
+                })
+                .filter(Boolean)
+                .join(", "),
+            ],
           ]}
         />
       </Box>
@@ -276,21 +285,10 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
 
   maxStat = clamp(maxStat, 150, 255);
 
+  const [badgeType, tooltipContent] = getEffectiveBadgeInfo(pokemon);
+
   return (
-    <SectionCard
-      title="Base Stats"
-      right={
-        <Box vfx={{ axis: "x", gap: "xs", align: "center" }}>
-          <Badge type="success">Total {pokemon.baseTotal}</Badge>
-          <Tooltip
-            offset={4}
-            tooltipContent="Computed by subtracting unused attack type"
-          >
-            <Badge type="info">Effective {pokemon.effectiveBaseTotal}</Badge>
-          </Tooltip>
-        </Box>
-      }
-    >
+    <SectionCard title="Base Stats">
       <Box vfx={{ axis: "y", gap: "xs" }}>
         {stats.map((stat) => {
           const value = pokemon.baseStats[stat];
@@ -310,10 +308,10 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
               </ui.strong>
               <Box vfx={{ axis: "x", width: "full", paddingX: "xs" }}>
                 <Box
-                  vfx={{ radius: "max" }}
+                  vfx={{ radius: "max", shadow: "subtle" }}
                   style={{
                     width: `${widthPct}%`,
-                    height: 10,
+                    height: 12,
                     backgroundColor: statColor(value),
                   }}
                 />
@@ -325,8 +323,51 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
           );
         })}
       </Box>
+      <Box
+        vfx={{
+          axis: "x",
+          align: "center",
+          justify: "between",
+          borderTop: true,
+          paddingTop: "xs",
+        }}
+      >
+        <ui.strong vfx={{ color: "muted" }}>TOTAL</ui.strong>
+        <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
+          <Tooltip offset={4} tooltipContent={tooltipContent}>
+            <Badge type={badgeType} vfx={{ fontWeight: 9 }}>
+              EFFECTIVE {pokemon.effectiveBaseTotal}
+            </Badge>
+          </Tooltip>
+          <ui.strong>{pokemon.baseTotal}</ui.strong>
+        </Box>
+      </Box>
     </SectionCard>
   );
+}
+
+function getEffectiveBadgeInfo(pokemon: Pokemon) {
+  const diff = pokemon.baseTotal - pokemon.effectiveBaseTotal;
+  if (diff <= 60)
+    return [
+      "success",
+      <>
+        Nice! <ui.strong>{pokemon.name}</ui.strong> is efficient
+      </>,
+    ] as const;
+  if (diff <= 100)
+    return [
+      "warning",
+      <>
+        Not bad, but <ui.strong>{pokemon.name}</ui.strong> is wasting power
+      </>,
+    ] as const;
+  return [
+    "error",
+    <>
+      Oh no! <ui.strong>{pokemon.name}</ui.strong> is probably a mixed-attacker
+    </>,
+  ] as const;
 }
 
 function TypeEffectivenessSection({ pokemon }: { pokemon: Pokemon }) {
@@ -347,6 +388,7 @@ function TypeEffectivenessGrid({ table }: { table: Record<Type, Multiplier> }) {
     <Box vfx={{ axis: "x", wrap: true, gap: "s", justify: "center" }}>
       {types.map((type) => {
         const mult = table[type];
+        const [label, color] = MULT_LABEL[mult];
         return (
           <Box
             key={type}
@@ -359,7 +401,9 @@ function TypeEffectivenessGrid({ table }: { table: Record<Type, Multiplier> }) {
             style={{ width: "10ch" }}
           >
             <TypeBadge type={type} vfx={{ width: "full" }} />
-            <ui.span vfx={{ fontWeight: 9 }}>{MULT_LABEL[mult]}</ui.span>
+            <ui.span style={{ color }} vfx={{ fontWeight: 9 }}>
+              {label}
+            </ui.span>
           </Box>
         );
       })}
@@ -407,13 +451,31 @@ const BUCKET_TO_MULT: Record<
   none: 0,
 };
 
-const MULT_LABEL: Record<Multiplier, string> = {
-  0: "0×",
-  0.25: "¼×",
-  0.5: "½×",
-  1: "1×",
-  2: "2×",
-  4: "4×",
+const COLORS = {
+  red: "#ff4444",
+  orange: "#ff9000",
+  yellow: "#ffde00",
+  yellowGreen: "#cfef5f",
+  green: "#45b86b",
+  blue: "#3a85ff",
+} as const;
+
+function statColor(value: number): string {
+  if (value < 30) return COLORS.red;
+  if (value < 60) return COLORS.orange;
+  if (value < 90) return COLORS.yellow;
+  if (value < 120) return COLORS.yellowGreen;
+  if (value < 150) return COLORS.green;
+  return COLORS.blue;
+}
+
+const MULT_LABEL: Record<Multiplier, [string, string]> = {
+  0: ["0×", COLORS.blue],
+  0.25: ["¼×", "#209246"],
+  0.5: ["½×", "#9fc809"],
+  1: ["1×", "#ceb40e"],
+  2: ["2×", "#bb6d07"],
+  4: ["4×", "#950909"],
 };
 
 function computeEffectivenessTable(
@@ -438,15 +500,6 @@ function computeEffectivenessTable(
   });
 
   return table;
-}
-
-function statColor(value: number): string {
-  if (value < 30) return "#ff4444";
-  if (value < 60) return "#ff9000";
-  if (value < 90) return "#ffde00";
-  if (value < 120) return "#cfef5f";
-  if (value < 150) return "#45b86b";
-  return "#3a85ff";
 }
 
 const STAT_LABELS = {

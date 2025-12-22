@@ -160,12 +160,17 @@ export function convertToPokemonStruct(
   };
 }
 
-export function formatMeters(m: number) {
-  return `${m.toFixed(1)} m`;
+export function formatMeters(meters: number) {
+  const feet = meters * 3.28084;
+  const flooredFeet = Math.floor(feet);
+
+  const inches = Math.floor((feet - flooredFeet) * 12);
+
+  return `${flooredFeet}'${inches}"`;
 }
 
 export function formatKg(kg: number) {
-  return `${kg.toFixed(1)} kg`;
+  return `${(kg * 2.20462).toFixed(1)} lbs`;
 }
 
 export function clamp(n: number, min: number, max: number) {
