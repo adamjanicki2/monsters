@@ -55,7 +55,13 @@ type Pokemon = {
 
 type PokemonFragment = Pick<
   Pokemon,
-  "key" | "name" | "effectiveBaseTotal" | "baseTotal" | "sprite" | "type"
+  | "key"
+  | "name"
+  | "effectiveBaseTotal"
+  | "baseTotal"
+  | "sprite"
+  | "type"
+  | "dexNumber"
 >;
 
 export type {

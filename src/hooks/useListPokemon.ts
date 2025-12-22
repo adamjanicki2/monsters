@@ -10,6 +10,7 @@ export default function useListPokemon() {
   getAllPokemon {
     key
     baseStatsTotal
+    num
     baseStats {
       attack
       specialattack
@@ -34,6 +35,7 @@ export default function useListPokemon() {
           return {
             name,
             key,
+            dexNumber: pokemon.num,
             baseTotal: pokemon.baseStatsTotal,
             sprite: `https://play.pokemonshowdown.com/sprites/dex/${pokemon.key}.png`,
             type: pokemon.types.map(
