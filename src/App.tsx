@@ -13,7 +13,6 @@ export const client = new ApolloClient({
     uri: "https://graphqlpokemon.favware.tech/v8",
   }),
   cache: new InMemoryCache(),
-  // will default to cache-first policy
 });
 
 const App = () => {

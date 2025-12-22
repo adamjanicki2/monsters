@@ -52,7 +52,9 @@ export default function ViewPokemon() {
       <Box vfx={{ axis: "y", gap: "l", paddingY: "l", width: "full" }}>
         <Header pokemon={pokemon} name={properName} />
         {loading || !pokemon ? (
-          <Spinner />
+          <Box vfx={{ width: "full" }}>
+            <Spinner />
+          </Box>
         ) : (
           <>
             <NeighborLinks pokemon={pokemon} />
@@ -67,51 +69,35 @@ export default function ViewPokemon() {
 
 function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
   const index = pokemon.dexNumber - 1;
-  const [prevIndex, nextIndex] = [index - 1, index + 1];
 
-  if (index === pokemonKeys.length - 1) {
-    const key = pokemonKeys[prevIndex];
+  const prevIndex = index - 1;
+  const nextIndex = index + 1;
+
+  const hasPrev = index > 0;
+  const hasNext = index < pokemonKeys.length - 1;
+
+  const commonLinkVfx = { axis: "x", align: "center", gap: "xs" } as const;
+
+  const renderNeighbor = (dir: "prev" | "next") => {
+    const isPrev = dir === "prev";
+    const neighborIndex = isPrev ? prevIndex : nextIndex;
+    const key = pokemonKeys[neighborIndex];
+
     return (
-      <Box vfx={{ axis: "x", align: "center", width: "full" }}>
-        <Link
-          to={`/dex/${key}`}
-          vfx={{ axis: "x", align: "center", gap: "xs" }}
-        >
-          <Icon icon="chevron-left" /> #{padDexNumber(prevIndex + 1)} {dex[key]}
-        </Link>
-      </Box>
+      <Link to={`/dex/${key}`} vfx={commonLinkVfx}>
+        {isPrev && <Icon icon="chevron-left" />}#
+        {padDexNumber(neighborIndex + 1)} {dex[key]}
+        {!isPrev && <Icon icon="chevron-right" />}
+      </Link>
     );
-  }
+  };
 
-  if (index <= 0) {
-    const key = pokemonKeys[1];
-    return (
-      <Box vfx={{ axis: "x", align: "center", width: "full" }}>
-        <Link
-          to={`/dex/${key}`}
-          vfx={{ axis: "x", align: "center", gap: "xs" }}
-        >
-          #{padDexNumber(nextIndex + 1)}
-          {dex[key]}
-          <Icon icon="chevron-right" />
-        </Link>
-      </Box>
-    );
-  }
-
-  const [prev, next] = [pokemonKeys[index - 1], pokemonKeys[index + 1]];
+  const justify = hasPrev && hasNext ? "between" : hasNext ? "end" : "start";
 
   return (
-    <Box
-      vfx={{ axis: "x", align: "center", width: "full", justify: "between" }}
-    >
-      <Link to={`/dex/${prev}`} vfx={{ axis: "x", align: "center", gap: "xs" }}>
-        <Icon icon="chevron-left" /> #{padDexNumber(prevIndex + 1)} {dex[prev]}
-      </Link>
-      <Link to={`/dex/${next}`} vfx={{ axis: "x", align: "center", gap: "xs" }}>
-        #{padDexNumber(nextIndex + 1)} {dex[next]}
-        <Icon icon="chevron-right" />
-      </Link>
+    <Box vfx={{ axis: "x", align: "center", width: "full", justify }}>
+      {hasPrev && renderNeighbor("prev")}
+      {hasNext && renderNeighbor("next")}
     </Box>
   );
 }
@@ -412,7 +398,7 @@ export function getEffectiveBadgeInfo(pokemon: Pokemon | PokemonFragment) {
     return [
       "success",
       <>
-        Nice! <ui.strong>{pokemon.name}</ui.strong> is efficient
+        Nice! <ui.strong>{pokemon.name}</ui.strong> is either efficient or bad
       </>,
     ] as const;
   if (diff <= 100)

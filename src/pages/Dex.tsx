@@ -24,7 +24,9 @@ export default function Dex() {
   if (loading || !pokemon)
     return (
       <Wrapper>
-        <Spinner />
+        <Box vfx={{ width: "full" }}>
+          <Spinner />
+        </Box>
       </Wrapper>
     );
 
