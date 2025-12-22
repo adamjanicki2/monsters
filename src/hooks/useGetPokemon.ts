@@ -8,6 +8,7 @@ type Config = {
 };
 
 export default function useGetPokemon({ key, properName }: Config) {
+  // reverse texts to get the original generation description
   const query = `
 {
   getPokemon(pokemon: ${key}, reverseFlavorTexts: false) {
@@ -43,47 +44,6 @@ export default function useGetPokemon({ key, properName }: Config) {
       percentageWithOrdinaryPokeballAtFullHealth
     }
     classification
-    cry
-    evolutionLevel
-    preevolutions {
-      key
-      sprite
-      evolutionLevel
-      learnsets {
-        generation7 {
-          eggMoves {
-            move {
-              key
-              accuracy
-              basePower
-              bulbapediaPage
-              category
-              contestType
-              desc
-              isFieldMove
-              isGMax
-              isNonstandard
-              isZ
-              maxMovePower
-              name
-              pp
-              priority
-              serebiiPage
-              shortDesc
-              smogonPage
-              target
-              type
-              zMovePower
-            }
-          }
-        }
-      }
-    }
-    evolutions {
-      evolutionLevel
-      key
-      sprite
-    }
     evYields {
       attack
       defense
@@ -101,65 +61,9 @@ export default function useGetPokemon({ key, properName }: Config) {
       male
     }
     height
-    isEggObtainable
-    levellingRate
     num
-    learnsets {
-      generation7 {
-        eggMoves {
-          move {
-            key
-            accuracy
-            basePower
-            category
-            desc
-            name
-            pp
-            priority
-            shortDesc
-            target
-            type
-            zMovePower
-          }
-        }
-        tmMoves {
-          move {
-            key
-            accuracy
-            basePower
-            category
-            desc
-            name
-            pp
-            priority
-            shortDesc
-            target
-            type
-            zMovePower
-          }
-        }
-        tutorMoves {
-          move {
-            key
-            accuracy
-            basePower
-            category
-            desc
-            name
-            pp
-            priority
-            shortDesc
-            target
-            type
-            zMovePower
-          }
-        }
-      }
-    }
     otherFormes
-    shinySprite
     species
-    sprite
     types {
       name
       matchup {

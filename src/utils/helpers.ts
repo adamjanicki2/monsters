@@ -5,7 +5,7 @@ import type {
 import type { AttackerType, Pokemon, PokemonKey, Type } from "src/utils/types";
 import { types as allTypes } from "src/utils/pokemon";
 
-const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites/";
+const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites";
 
 function constructSprites(key: PokemonKey): [string, string] {
   return [
@@ -78,10 +78,7 @@ function computeWeaknesses(
   return weaknesses;
 }
 
-export function convertToPokemonStruct(
-  pokemon: GQLPokemon,
-  name: string
-): Pokemon {
+export function computeAttackingInfo(pokemon: GQLPokemon) {
   const { baseStats, baseStatsTotal } = pokemon;
   const { attack, specialattack } = baseStats;
   let attackerType: AttackerType = "special";
@@ -93,6 +90,19 @@ export function convertToPokemonStruct(
     attackerType = "physical";
     effectiveBaseTotal -= specialattack;
   }
+
+  return {
+    attackerType,
+    effectiveBaseTotal,
+  };
+}
+
+export function convertToPokemonStruct(
+  pokemon: GQLPokemon,
+  name: string
+): Pokemon {
+  const { baseStats, baseStatsTotal } = pokemon;
+  const { attackerType, effectiveBaseTotal } = computeAttackingInfo(pokemon);
   const key = pokemon.key.valueOf() as PokemonKey;
   const [sprite, shinySprite] = constructSprites(key);
 
@@ -114,26 +124,6 @@ export function convertToPokemonStruct(
     baseTotal: baseStatsTotal,
     effectiveBaseTotal,
     evolutionLevel: pokemon.evolutionLevel,
-    preevolutions: (pokemon.preevolutions || []).map((mon) => {
-      const key = mon.key.valueOf() as PokemonKey;
-      const [sprite, shinySprite] = constructSprites(key);
-      return {
-        key,
-        sprite,
-        shinySprite,
-        evolutionLevel: mon.evolutionLevel,
-      };
-    }),
-    evolutions: (pokemon.evolutions || []).map((mon) => {
-      const key = mon.key.valueOf() as PokemonKey;
-      const [sprite, shinySprite] = constructSprites(key);
-      return {
-        key,
-        sprite,
-        shinySprite,
-        evolutionLevel: mon.evolutionLevel,
-      };
-    }),
     evYields: pokemon.evYields,
     flavorText: pokemon.flavorTexts[0],
     gender: ungendered ? null : pokemon.gender,
@@ -149,13 +139,37 @@ export function convertToPokemonStruct(
       : pokemon.legendary
       ? "legendary"
       : null,
+    type: [
+      pokemon.types[0].name.toLowerCase(),
+      pokemon.types[1]?.name?.toLowerCase(),
+    ].filter(Boolean) as unknown as Pokemon["type"],
+    catchRate: [
+      pokemon.catchRate!.base,
+      pokemon.catchRate!.percentageWithOrdinaryPokeballAtFullHealth,
+    ],
   };
 }
 
-export function formatMeters(m: number) {
-  return `${m.toFixed(1)} m`;
+export function formatMeters(meters: number) {
+  const feet = meters * 3.28084;
+  const flooredFeet = Math.floor(feet);
+
+  const inches = Math.floor((feet - flooredFeet) * 12);
+
+  return `${flooredFeet}'${inches}"`;
 }
 
 export function formatKg(kg: number) {
-  return `${kg.toFixed(1)} kg`;
+  return `${(kg * 2.20462).toFixed(1)} lbs`;
+}
+
+export function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+export function padDexNumber(dexNo: number): string {
+  const str = `${dexNo}`;
+  const missingChars = 3 - str.length;
+
+  return "0".repeat(missingChars) + str;
 }

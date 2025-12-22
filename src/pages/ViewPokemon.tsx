@@ -4,21 +4,27 @@ import {
   Spinner,
   Box,
   ui,
-  Badge,
   Button,
-  Icon,
   assertDefined,
+  Icon,
 } from "@adamjanicki/ui";
 import { Tooltip } from "@adamjanicki/ui-extended";
 import { useParams } from "react-router";
 import Page from "src/components/Page";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
-import { getProperName, stats, types } from "src/utils/pokemon";
-import type { Pokemon, PokemonFragment, Type } from "src/utils/types";
+import {
+  getProperName,
+  stats,
+  types,
+  pokemonKeys,
+  pokemon as dex,
+} from "src/utils/pokemon";
+import type { Pokemon, Type, Stat, PokemonFragment } from "src/utils/types";
+import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
+import TypeBadge from "src/components/TypeBadge";
+import BigBadge from "src/components/BigBadge";
 import Link from "src/components/Link";
-import "src/pages/view/ViewPokemon.css";
-import { formatKg, formatMeters } from "src/utils/helpers";
 
 export default function ViewPokemon() {
   const params = useParams<{ slug: string }>();
@@ -46,16 +52,53 @@ export default function ViewPokemon() {
       <Box vfx={{ axis: "y", gap: "l", paddingY: "l", width: "full" }}>
         <Header pokemon={pokemon} name={properName} />
         {loading || !pokemon ? (
-          <Spinner />
+          <Box vfx={{ width: "full" }}>
+            <Spinner />
+          </Box>
         ) : (
           <>
+            <NeighborLinks pokemon={pokemon} />
             <IntroInfo pokemon={pokemon} />
             <MainGrid pokemon={pokemon} />
-            <Evolutions pokemon={pokemon} />
           </>
         )}
       </Box>
     </Page>
+  );
+}
+
+function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
+  const index = pokemon.dexNumber - 1;
+
+  const prevIndex = index - 1;
+  const nextIndex = index + 1;
+
+  const hasPrev = index > 0;
+  const hasNext = index < pokemonKeys.length - 1;
+
+  const commonLinkVfx = { axis: "x", align: "center", gap: "xs" } as const;
+
+  const renderNeighbor = (dir: "prev" | "next") => {
+    const isPrev = dir === "prev";
+    const neighborIndex = isPrev ? prevIndex : nextIndex;
+    const key = pokemonKeys[neighborIndex];
+
+    return (
+      <Link to={`/dex/${key}`} vfx={commonLinkVfx}>
+        {isPrev && <Icon icon="chevron-left" />}#
+        {padDexNumber(neighborIndex + 1)} {dex[key]}
+        {!isPrev && <Icon icon="chevron-right" />}
+      </Link>
+    );
+  };
+
+  const justify = hasPrev && hasNext ? "between" : hasNext ? "end" : "start";
+
+  return (
+    <Box vfx={{ axis: "x", align: "center", width: "full", justify }}>
+      {hasPrev && renderNeighbor("prev")}
+      {hasNext && renderNeighbor("next")}
+    </Box>
   );
 }
 
@@ -64,14 +107,14 @@ function Header({ pokemon, name }: { pokemon?: Pokemon; name: string }) {
     <Box vfx={{ axis: "x", align: "center", gap: "m", wrap: true }}>
       <ui.h1
         className="page-title-text"
-        vfx={{ fontWeight: 8, margin: "none" }}
+        vfx={{ fontWeight: 9, margin: "none" }}
       >
         {name}
       </ui.h1>
       {pokemon && pokemon.rarity && (
-        <Badge vfx={{ height: "fit" }} type="success">
-          {pokemon.rarity.toUpperCase()}
-        </Badge>
+        <BigBadge vfx={{ height: "fit" }} type="success">
+          {pokemon.rarity}
+        </BigBadge>
       )}
     </Box>
   );
@@ -82,7 +125,7 @@ function IntroInfo({ pokemon }: { pokemon: Pokemon }) {
     <Box
       vfx={{
         axis: "x",
-        gap: "l",
+        gap: "xl",
         wrap: true,
         padding: "m",
         border: true,
@@ -94,7 +137,12 @@ function IntroInfo({ pokemon }: { pokemon: Pokemon }) {
       <SpritePanel pokemon={pokemon} />
       <Box vfx={{ axis: "y", gap: "xs" }}>
         <Box vfx={{ axis: "y", gap: "xs" }}>
-          <ui.h2 vfx={{ margin: "none" }}>No. {pokemon.dexNumber}</ui.h2>
+          <Subheader>{"#" + padDexNumber(pokemon.dexNumber)}</Subheader>
+          <Box vfx={{ axis: "x", gap: "xs", align: "center" }}>
+            {pokemon.type.map((type) => (
+              <TypeBadge type={type} key={type} />
+            ))}
+          </Box>
           <ui.strong vfx={{ color: "muted" }}>{pokemon.desc}</ui.strong>
         </Box>
 
@@ -108,8 +156,26 @@ function IntroInfo({ pokemon }: { pokemon: Pokemon }) {
                   `♂ ${pokemon.gender.male} / ♀ ${pokemon.gender.female}`,
                 ]
               : null,
-            ["Base Total", String(pokemon.baseTotal)],
-            ["Effective Total", String(pokemon.effectiveBaseTotal)],
+            [
+              "Catch Rate",
+              <ui.span>
+                {pokemon.catchRate[0]}{" "}
+                <ui.em vfx={{ fontWeight: 5, color: "muted" }}>
+                  ({pokemon.catchRate[1]} at full HP)
+                </ui.em>
+              </ui.span>,
+            ],
+            [
+              "EVs",
+              Object.entries(pokemon.evYields)
+                .map(([stat, value]) => {
+                  if (value >= 1)
+                    return `${value} ${STAT_LABELS[stat as Stat]}`;
+                  else return "";
+                })
+                .filter(Boolean)
+                .join(", "),
+            ],
           ]}
         />
       </Box>
@@ -127,6 +193,7 @@ function SpritePanel({ pokemon }: { pokemon: Pokemon }) {
       <ui.img
         src={showShiny ? pokemon.shinySprite : pokemon.sprite}
         alt={pokemon.name}
+        vfx={{ borderBottom: true }}
       />
       <Button size="small" onClick={() => setShowShiny(!showShiny)}>
         {showShiny ? "Normal" : "Shiny"} sprite
@@ -145,12 +212,15 @@ function MainGrid({ pokemon }: { pokemon: Pokemon }) {
         align: "start",
       }}
     >
-      <Box vfx={{ axis: "y", gap: "l" }} style={{ flex: 1, minWidth: 320 }}>
+      <Box
+        vfx={{ axis: "y", gap: "l" }}
+        style={{ flex: 1, minWidth: "min(400px, 100%)" }}
+      >
         <StatsSection pokemon={pokemon} />
         <FlavorSection pokemon={pokemon} />
       </Box>
 
-      <Box vfx={{ axis: "y", gap: "l" }} style={{ width: "min(520px, 100%)" }}>
+      <Box className="type-section">
         <TypeEffectivenessSection pokemon={pokemon} />
       </Box>
     </Box>
@@ -175,6 +245,7 @@ function SectionCard({
         border: true,
         radius: "rounded",
         backgroundColor: "default",
+        shadow: "subtle",
       }}
     >
       <Box
@@ -186,7 +257,7 @@ function SectionCard({
           gap: "s",
         }}
       >
-        <ui.h2 vfx={{ margin: "none" }}>{title}</ui.h2>
+        <Subheader>{title.toUpperCase()}</Subheader>
         {right && (
           <Box vfx={{ axis: "x", gap: "s", align: "center" }}>{right}</Box>
         )}
@@ -217,7 +288,7 @@ function KeyValueGrid({
         return (
           <React.Fragment key={k}>
             <ui.span vfx={{ color: "muted" }}>{k}</ui.span>
-            <ui.span vfx={{ fontWeight: 6 }}>{v}</ui.span>
+            <ui.strong>{v}</ui.strong>
           </React.Fragment>
         );
       })}
@@ -230,7 +301,7 @@ function AbilitiesPanel({ pokemon }: { pokemon: Pokemon }) {
 
   return (
     <Box vfx={{ axis: "y", gap: "s" }}>
-      <ui.h2 vfx={{ margin: "none" }}>Abilities</ui.h2>
+      <Subheader>Abilities</Subheader>
       <AbilityRow ability={first} label="Primary" />
       {second && <AbilityRow ability={second} label="Secondary" />}
       {hidden && <AbilityRow ability={hidden} label="Hidden" />}
@@ -247,11 +318,11 @@ function AbilityRow({
 }) {
   return (
     <Box vfx={{ axis: "y", gap: "xxs" }}>
-      <Box vfx={{ axis: "x", gap: "xs", align: "center", wrap: true }}>
+      <Box vfx={{ axis: "x", gap: "xs", align: "center" }}>
         <ui.strong>{ability.name}</ui.strong>
         <ui.span vfx={{ fontSize: "s", color: "muted" }}>({label})</ui.span>
       </Box>
-      <ui.p vfx={{ color: "muted" }}>{ability.shortDesc}</ui.p>
+      <ui.p vfx={{ color: "muted", margin: "none" }}>{ability.shortDesc}</ui.p>
     </Box>
   );
 }
@@ -261,23 +332,12 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
     ...Object.values(pokemon.baseStats).filter((num) => !isNaN(num))
   );
 
-  maxStat = clamp(maxStat + 10, 150, 255);
+  maxStat = clamp(maxStat, 150, 255);
+
+  const [badgeType, tooltipContent] = getEffectiveBadgeInfo(pokemon);
 
   return (
-    <SectionCard
-      title="Base Stats"
-      right={
-        <Box vfx={{ axis: "x", gap: "xs", align: "center" }}>
-          <Badge type="success">Total {pokemon.baseTotal}</Badge>
-          <Tooltip
-            offset={4}
-            tooltipContent="Computed by subtracting unused attack type"
-          >
-            <Badge type="info">Effective {pokemon.effectiveBaseTotal}</Badge>
-          </Tooltip>
-        </Box>
-      }
-    >
+    <SectionCard title="Base Stats">
       <Box vfx={{ axis: "y", gap: "xs" }}>
         {stats.map((stat) => {
           const value = pokemon.baseStats[stat];
@@ -288,38 +348,75 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
               key={stat}
               vfx={{
                 axis: "x",
-                gap: "s",
                 align: "center",
-                width: "full",
                 justify: "between",
               }}
             >
-              <Box
-                vfx={{ axis: "x", width: "full", align: "center", gap: "s" }}
-              >
-                <ui.span
-                  vfx={{ color: "muted", fontWeight: 5 }}
-                  // Defense is 7 chars, then one extra padding
-                  style={{ width: "8ch" }}
-                >
-                  {STAT_LABELS[stat].toUpperCase()}
-                </ui.span>
+              <ui.strong vfx={{ color: "muted" }} style={{ width: "12ch" }}>
+                {STAT_LABELS[stat].toUpperCase()}
+              </ui.strong>
+              <Box vfx={{ axis: "x", width: "full", paddingX: "xs" }}>
                 <Box
-                  vfx={{ radius: "max" }}
+                  vfx={{ radius: "max", shadow: "subtle" }}
                   style={{
                     width: `${widthPct}%`,
-                    height: 10,
+                    height: 12,
                     backgroundColor: statColor(value),
                   }}
                 />
               </Box>
-              <ui.span vfx={{ fontWeight: 6 }}>{value}</ui.span>
+              <ui.strong vfx={{ textAlign: "right" }} style={{ width: "6ch" }}>
+                {value}
+              </ui.strong>
             </Box>
           );
         })}
       </Box>
+      <Box
+        vfx={{
+          axis: "x",
+          align: "center",
+          justify: "between",
+          borderTop: true,
+          paddingTop: "xs",
+        }}
+      >
+        <ui.strong vfx={{ color: "muted" }}>TOTAL</ui.strong>
+        <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
+          <Tooltip offset={4} tooltipContent={tooltipContent}>
+            <BigBadge type={badgeType}>
+              {"EFFECTIVE " + pokemon.effectiveBaseTotal}
+            </BigBadge>
+          </Tooltip>
+          <ui.strong>{pokemon.baseTotal}</ui.strong>
+        </Box>
+      </Box>
     </SectionCard>
   );
+}
+
+export function getEffectiveBadgeInfo(pokemon: Pokemon | PokemonFragment) {
+  const diff = pokemon.baseTotal - pokemon.effectiveBaseTotal;
+  if (diff <= 60)
+    return [
+      "success",
+      <>
+        Nice! <ui.strong>{pokemon.name}</ui.strong> is either efficient or bad
+      </>,
+    ] as const;
+  if (diff <= 100)
+    return [
+      "warning",
+      <>
+        Not bad, but <ui.strong>{pokemon.name}</ui.strong> is wasting power
+      </>,
+    ] as const;
+  return [
+    "error",
+    <>
+      Oh no! <ui.strong>{pokemon.name}</ui.strong> is probably a mixed-attacker
+    </>,
+  ] as const;
 }
 
 function TypeEffectivenessSection({ pokemon }: { pokemon: Pokemon }) {
@@ -337,34 +434,24 @@ function TypeEffectivenessSection({ pokemon }: { pokemon: Pokemon }) {
 
 function TypeEffectivenessGrid({ table }: { table: Record<Type, Multiplier> }) {
   return (
-    <Box
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-        gap: 8,
-      }}
-    >
-      {types.map((t) => {
-        const mult = table[t];
+    <Box vfx={{ axis: "x", wrap: true, gap: "s", justify: "center" }}>
+      {types.map((type) => {
+        const mult = table[type];
+        const [label, color] = MULT_LABEL[mult];
         return (
           <Box
-            key={t}
+            key={type}
             vfx={{
               axis: "y",
               align: "center",
               justify: "center",
               padding: "xs",
-              radius: "subtle",
-              border: true,
             }}
-            style={{
-              minHeight: 54,
-              textTransform: "capitalize",
-            }}
+            style={{ width: "10ch" }}
           >
-            <ui.span vfx={{ fontWeight: 7 }}>{t}</ui.span>
-            <ui.span vfx={{ fontSize: "s", color: "muted" }}>
-              {MULT_LABEL[mult]}
+            <TypeBadge type={type} vfx={{ width: "full" }} />
+            <ui.span style={{ color }} vfx={{ fontWeight: 9 }}>
+              {label}
             </ui.span>
           </Box>
         );
@@ -377,7 +464,7 @@ function FlavorSection({ pokemon }: { pokemon: Pokemon }) {
   return (
     <SectionCard title="Description">
       <Box vfx={{ axis: "y", gap: "s" }}>
-        <ui.p>{pokemon.flavorText.flavor}</ui.p>
+        <ui.p vfx={{ margin: "none" }}>{pokemon.flavorText.flavor}</ui.p>
         <ui.em vfx={{ color: "muted" }}>
           — Pokémon {pokemon.flavorText.game}
         </ui.em>
@@ -386,83 +473,11 @@ function FlavorSection({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-function Evolutions({ pokemon }: { pokemon: Pokemon }) {
-  const hasEvo =
-    pokemon.evolutions.length > 0 || pokemon.preevolutions.length > 0;
-
-  if (!hasEvo) return null;
-
-  const line: PokemonFragment[] = [
-    ...pokemon.preevolutions,
-    {
-      key: pokemon.key,
-      sprite: pokemon.sprite,
-      shinySprite: pokemon.shinySprite,
-      evolutionLevel: pokemon.evolutionLevel,
-    },
-    ...pokemon.evolutions,
-  ];
-
+function Subheader({ children }: { children: string }) {
   return (
-    <SectionCard title="Evolution Line">
-      <Box vfx={{ axis: "x", gap: "m", wrap: true, align: "center" }}>
-        {line.map((p, i) => (
-          <React.Fragment key={p.key}>
-            <EvolutionNode pokemon={p} current={p.key === pokemon.key} />
-            {i < line.length - 1 && (
-              <Box vfx={{ axis: "y", align: "center", justify: "center" }}>
-                <Icon icon="arrow-right" size="xs" />
-                <ui.span vfx={{ fontSize: "s", color: "muted" }}>
-                  Lv. {line[i + 1].evolutionLevel}
-                </ui.span>
-              </Box>
-            )}
-          </React.Fragment>
-        ))}
-      </Box>
-    </SectionCard>
-  );
-}
-
-function EvolutionNode({
-  pokemon,
-  current,
-}: {
-  pokemon: PokemonFragment;
-  current: boolean;
-}) {
-  const innerContent = (
-    <Box
-      className={current ? "evo-current" : undefined}
-      vfx={{
-        axis: "y",
-        align: "center",
-        gap: "xs",
-        padding: "s",
-        border: true,
-        radius: "rounded",
-        backgroundColor: "default",
-      }}
-      style={{ width: 140 }}
-    >
-      <ui.img className="evo-sprite" src={pokemon.sprite} alt={pokemon.key} />
-      <ui.span vfx={{ fontSize: "s", fontWeight: 7, textAlign: "center" }}>
-        {getProperName(pokemon.key)}
-      </ui.span>
-    </Box>
-  );
-
-  if (current) {
-    return innerContent;
-  }
-  return (
-    <Link
-      className="aui-dim"
-      vfx={{ color: "default" }}
-      to={`/dex/${pokemon.key}`}
-    >
-      {innerContent}
-    </Link>
+    <ui.h2 vfx={{ margin: "none", fontWeight: 9 }}>
+      {children.toUpperCase()}
+    </ui.h2>
   );
 }
 
@@ -485,18 +500,32 @@ const BUCKET_TO_MULT: Record<
   none: 0,
 };
 
-const MULT_LABEL: Record<Multiplier, string> = {
-  0: "0×",
-  0.25: "¼×",
-  0.5: "½×",
-  1: "1×",
-  2: "2×",
-  4: "4×",
-};
+const COLORS = {
+  red: "#ff4444",
+  orange: "#ff9000",
+  yellow: "#ffde00",
+  yellowGreen: "#cfef5f",
+  green: "#45b86b",
+  blue: "#3a85ff",
+} as const;
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+function statColor(value: number): string {
+  if (value < 30) return COLORS.red;
+  if (value < 60) return COLORS.orange;
+  if (value < 90) return COLORS.yellow;
+  if (value < 120) return COLORS.yellowGreen;
+  if (value < 150) return COLORS.green;
+  return COLORS.blue;
 }
+
+const MULT_LABEL: Record<Multiplier, [string, string]> = {
+  0: ["0×", COLORS.blue],
+  0.25: ["¼×", "#209246"],
+  0.5: ["½×", "#9fc809"],
+  1: ["1×", "#ceb40e"],
+  2: ["2×", "#bb6d07"],
+  4: ["4×", "#950909"],
+};
 
 function computeEffectivenessTable(
   weaknesses: Pokemon["weaknesses"]
@@ -520,15 +549,6 @@ function computeEffectivenessTable(
   });
 
   return table;
-}
-
-function statColor(value: number): string {
-  if (value < 30) return "var(--stat-red)";
-  if (value < 60) return "var(--stat-orange)";
-  if (value < 90) return "var(--stat-yellow)";
-  if (value < 120) return "var(--stat-yellow-green)";
-  if (value < 150) return "var(--stat-green)";
-  return "var(--stat-blue)";
 }
 
 const STAT_LABELS = {

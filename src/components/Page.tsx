@@ -42,7 +42,7 @@ export default function Page({
         ...vfx,
       }}
       style={{ minHeight: "70vh", ...style }}
-      className="page-width bordering"
+      className="page-width"
     >
       {title && (
         <ui.h1
