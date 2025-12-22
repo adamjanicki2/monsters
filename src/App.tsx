@@ -6,6 +6,7 @@ import Nav from "src/components/Nav";
 import Home from "src/pages/Home";
 import NotFound from "src/pages/NotFound";
 import ViewPokemon from "src/pages/ViewPokemon";
+import Dex from "src/pages/Dex";
 
 export const client = new ApolloClient({
   link: new HttpLink({
@@ -23,6 +24,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/dex/:slug" element={<ViewPokemon />} />
+          <Route path="/dex" element={<Dex />} />
           {/* Make sure this is the last route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

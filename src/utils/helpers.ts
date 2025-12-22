@@ -5,7 +5,7 @@ import type {
 import type { AttackerType, Pokemon, PokemonKey, Type } from "src/utils/types";
 import { types as allTypes } from "src/utils/pokemon";
 
-const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites/";
+const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites";
 
 function constructSprites(key: PokemonKey): [string, string] {
   return [
@@ -78,10 +78,7 @@ function computeWeaknesses(
   return weaknesses;
 }
 
-export function convertToPokemonStruct(
-  pokemon: GQLPokemon,
-  name: string
-): Pokemon {
+export function computeAttackingInfo(pokemon: GQLPokemon) {
   const { baseStats, baseStatsTotal } = pokemon;
   const { attack, specialattack } = baseStats;
   let attackerType: AttackerType = "special";
@@ -93,6 +90,19 @@ export function convertToPokemonStruct(
     attackerType = "physical";
     effectiveBaseTotal -= specialattack;
   }
+
+  return {
+    attackerType,
+    effectiveBaseTotal,
+  };
+}
+
+export function convertToPokemonStruct(
+  pokemon: GQLPokemon,
+  name: string
+): Pokemon {
+  const { baseStats, baseStatsTotal } = pokemon;
+  const { attackerType, effectiveBaseTotal } = computeAttackingInfo(pokemon);
   const key = pokemon.key.valueOf() as PokemonKey;
   const [sprite, shinySprite] = constructSprites(key);
 
@@ -114,26 +124,6 @@ export function convertToPokemonStruct(
     baseTotal: baseStatsTotal,
     effectiveBaseTotal,
     evolutionLevel: pokemon.evolutionLevel,
-    preevolutions: (pokemon.preevolutions || []).map((mon) => {
-      const key = mon.key.valueOf() as PokemonKey;
-      const [sprite, shinySprite] = constructSprites(key);
-      return {
-        key,
-        sprite,
-        shinySprite,
-        evolutionLevel: mon.evolutionLevel,
-      };
-    }),
-    evolutions: (pokemon.evolutions || []).map((mon) => {
-      const key = mon.key.valueOf() as PokemonKey;
-      const [sprite, shinySprite] = constructSprites(key);
-      return {
-        key,
-        sprite,
-        shinySprite,
-        evolutionLevel: mon.evolutionLevel,
-      };
-    }),
     evYields: pokemon.evYields,
     flavorText: pokemon.flavorTexts[0],
     gender: ungendered ? null : pokemon.gender,

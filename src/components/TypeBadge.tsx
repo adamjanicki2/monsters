@@ -1,5 +1,6 @@
 import type { Type } from "src/utils/pokemon";
 import { Box } from "@adamjanicki/ui";
+import BigBadge from "src/components/BigBadge";
 
 type Props = {
   type: Type;
@@ -30,24 +31,15 @@ export const colors: Record<Type, [string, string]> = {
 export default function TypeBadge({ type, vfx }: Props) {
   const [backgroundColor, borderColor] = colors[type];
   return (
-    <Box
-      vfx={{
-        border: true,
-        padding: "xxs",
-        textAlign: "center",
-        shadow: "subtle",
-        radius: "rounded",
-        fontWeight: 9,
-        fontSize: "s",
-        ...vfx,
-      }}
+    <BigBadge
       style={{
         backgroundColor,
         borderColor,
         color: "white",
       }}
+      vfx={vfx}
     >
-      {type.toUpperCase()}
-    </Box>
+      {type}
+    </BigBadge>
   );
 }

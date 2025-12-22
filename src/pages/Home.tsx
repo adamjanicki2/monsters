@@ -1,5 +1,5 @@
 import { Box, ui } from "@adamjanicki/ui";
-import { useDocumentTitle } from "src/hooks";
+import useDocumentTitle from "src/hooks/useDocumentTitle";
 
 export default function Home() {
   useDocumentTitle("Monsters");

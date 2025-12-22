@@ -4,19 +4,27 @@ import {
   Spinner,
   Box,
   ui,
-  Badge,
   Button,
   assertDefined,
+  Icon,
 } from "@adamjanicki/ui";
 import { Tooltip } from "@adamjanicki/ui-extended";
 import { useParams } from "react-router";
 import Page from "src/components/Page";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
-import { getProperName, stats, types } from "src/utils/pokemon";
-import type { Pokemon, Type, Stat } from "src/utils/types";
+import {
+  getProperName,
+  stats,
+  types,
+  pokemonKeys,
+  pokemon as dex,
+} from "src/utils/pokemon";
+import type { Pokemon, Type, Stat, PokemonFragment } from "src/utils/types";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import TypeBadge from "src/components/TypeBadge";
+import BigBadge from "src/components/BigBadge";
+import Link from "src/components/Link";
 
 export default function ViewPokemon() {
   const params = useParams<{ slug: string }>();
@@ -47,12 +55,64 @@ export default function ViewPokemon() {
           <Spinner />
         ) : (
           <>
+            <NeighborLinks pokemon={pokemon} />
             <IntroInfo pokemon={pokemon} />
             <MainGrid pokemon={pokemon} />
           </>
         )}
       </Box>
     </Page>
+  );
+}
+
+function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
+  const index = pokemon.dexNumber - 1;
+  const [prevIndex, nextIndex] = [index - 1, index + 1];
+
+  if (index === pokemonKeys.length - 1) {
+    const key = pokemonKeys[prevIndex];
+    return (
+      <Box vfx={{ axis: "x", align: "center", width: "full" }}>
+        <Link
+          to={`/dex/${key}`}
+          vfx={{ axis: "x", align: "center", gap: "xs" }}
+        >
+          <Icon icon="chevron-left" /> #{padDexNumber(prevIndex + 1)} {dex[key]}
+        </Link>
+      </Box>
+    );
+  }
+
+  if (index <= 0) {
+    const key = pokemonKeys[1];
+    return (
+      <Box vfx={{ axis: "x", align: "center", width: "full" }}>
+        <Link
+          to={`/dex/${key}`}
+          vfx={{ axis: "x", align: "center", gap: "xs" }}
+        >
+          #{padDexNumber(nextIndex + 1)}
+          {dex[key]}
+          <Icon icon="chevron-right" />
+        </Link>
+      </Box>
+    );
+  }
+
+  const [prev, next] = [pokemonKeys[index - 1], pokemonKeys[index + 1]];
+
+  return (
+    <Box
+      vfx={{ axis: "x", align: "center", width: "full", justify: "between" }}
+    >
+      <Link to={`/dex/${prev}`} vfx={{ axis: "x", align: "center", gap: "xs" }}>
+        <Icon icon="chevron-left" /> #{padDexNumber(prevIndex + 1)} {dex[prev]}
+      </Link>
+      <Link to={`/dex/${next}`} vfx={{ axis: "x", align: "center", gap: "xs" }}>
+        #{padDexNumber(nextIndex + 1)} {dex[next]}
+        <Icon icon="chevron-right" />
+      </Link>
+    </Box>
   );
 }
 
@@ -66,9 +126,9 @@ function Header({ pokemon, name }: { pokemon?: Pokemon; name: string }) {
         {name}
       </ui.h1>
       {pokemon && pokemon.rarity && (
-        <Badge vfx={{ height: "fit" }} type="success">
-          {pokemon.rarity.toUpperCase()}
-        </Badge>
+        <BigBadge vfx={{ height: "fit" }} type="success">
+          {pokemon.rarity}
+        </BigBadge>
       )}
     </Box>
   );
@@ -335,9 +395,9 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
         <ui.strong vfx={{ color: "muted" }}>TOTAL</ui.strong>
         <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
           <Tooltip offset={4} tooltipContent={tooltipContent}>
-            <Badge type={badgeType} vfx={{ fontWeight: 9 }}>
-              EFFECTIVE {pokemon.effectiveBaseTotal}
-            </Badge>
+            <BigBadge type={badgeType}>
+              {"EFFECTIVE " + pokemon.effectiveBaseTotal}
+            </BigBadge>
           </Tooltip>
           <ui.strong>{pokemon.baseTotal}</ui.strong>
         </Box>
@@ -346,7 +406,7 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-function getEffectiveBadgeInfo(pokemon: Pokemon) {
+export function getEffectiveBadgeInfo(pokemon: Pokemon | PokemonFragment) {
   const diff = pokemon.baseTotal - pokemon.effectiveBaseTotal;
   if (diff <= 60)
     return [

@@ -46,6 +46,7 @@ export default function Nav() {
         style={open ? { display: "flex" } : undefined}
       >
         <Navlink to="/">Home</Navlink>
+        <Navlink to="/dex">Dex</Navlink>
       </Box>
     </ui.nav>
   );

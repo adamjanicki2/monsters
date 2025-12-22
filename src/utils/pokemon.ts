@@ -1028,6 +1028,8 @@ export const pokemon = {
   // pecharunt: "Pecharunt",
 } as const;
 
+export const pokemonKeys = Object.keys(pokemon) as readonly PokemonKey[];
+
 export const types = [
   "normal",
   "fire",

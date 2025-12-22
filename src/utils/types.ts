@@ -11,13 +11,6 @@ type Ability = {
 type Rarity = "mythical" | "legendary";
 type AttackerType = "physical" | "special";
 
-type PokemonFragment = {
-  readonly key: PokemonKey;
-  readonly sprite: string;
-  readonly shinySprite: string;
-  readonly evolutionLevel: Optional<string>;
-};
-
 type Pokemon = {
   readonly key: PokemonKey;
   readonly name: string;
@@ -32,8 +25,6 @@ type Pokemon = {
   readonly baseTotal: number;
   readonly effectiveBaseTotal: number;
   readonly evolutionLevel: Optional<string>;
-  readonly preevolutions: readonly PokemonFragment[];
-  readonly evolutions: readonly PokemonFragment[];
   readonly evYields: Record<Stat, number>;
   readonly flavorText: {
     readonly flavor: string;
@@ -62,13 +53,18 @@ type Pokemon = {
   readonly catchRate: readonly [number, string];
 };
 
+type PokemonFragment = Pick<
+  Pokemon,
+  "key" | "name" | "effectiveBaseTotal" | "baseTotal" | "sprite" | "type"
+>;
+
 export type {
   PokemonKey,
   Pokemon,
+  PokemonFragment,
   Type,
   AttackerType,
   Rarity,
-  PokemonFragment,
   Ability,
   Stat,
 };
