@@ -153,7 +153,7 @@ function IntroInfo({ pokemon }: { pokemon: Pokemon }) {
             pokemon.gender
               ? [
                   "Breeding",
-                  `♂ ${pokemon.gender.male} / ♀ ${pokemon.gender.female}`,
+                  `${pokemon.gender.male} M / ${pokemon.gender.female} F`,
                 ]
               : null,
             [

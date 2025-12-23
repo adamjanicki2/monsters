@@ -104,6 +104,7 @@ export default function Search({ open, onClose }: Props) {
         }}
         style={{ height: "80%" }}
         className="page-width"
+        onTouchStart={() => inputRef.current?.blur()}
       >
         <Box vfx={{ axis: "y", gap: "s", padding: "m", borderBottom: true }}>
           <Box vfx={{ axis: "x", align: "center", justify: "between" }}>
