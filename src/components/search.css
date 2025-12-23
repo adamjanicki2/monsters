@@ -1,0 +1,12 @@
+.dex-search-result {
+  border: 1px solid transparent;
+  transition: border var(--aui-default-transition),
+    background-color var(--aui-default-transition);
+}
+
+@media (hover: hover) {
+  .dex-search-result:hover {
+    border: 1px solid var(--aui-moon-gray);
+    background-color: #e8e8e8;
+  }
+}

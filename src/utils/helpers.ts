@@ -173,3 +173,6 @@ export function padDexNumber(dexNo: number): string {
 
   return "0".repeat(missingChars) + str;
 }
+
+export const makeIconSprite = (key: string) =>
+  `https://play.pokemonshowdown.com/sprites/dex/${key}.png`;
