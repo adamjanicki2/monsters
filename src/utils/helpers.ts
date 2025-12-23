@@ -49,7 +49,6 @@ function computeWeaknesses(
     return map as Record<Type, number>;
   };
 
-  // Dual-type logic
   const map1 = buildMultiplierMap(type1);
   const map2 = buildMultiplierMap(type2);
 

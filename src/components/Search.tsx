@@ -68,18 +68,13 @@ const LIMIT = 20;
 
 export default function Search({ open, onClose }: Props) {
   const [query, setQuery] = useState("");
-
   const normalizedQuery = query.trim();
-
   const { results, matches } = search(normalizedQuery, LIMIT);
-
-  // Refs
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     if (getDeviceType() === "desktop") {
-      // small timeout so Layer mounts first
       window.setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [open]);

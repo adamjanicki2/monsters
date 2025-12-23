@@ -34,10 +34,6 @@ export default function Nav() {
         e.preventDefault();
         openSearch();
       }
-
-      if (e.key === "Escape") {
-        closeSearch();
-      }
     };
 
     window.addEventListener("keydown", handler);
