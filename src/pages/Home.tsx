@@ -1,4 +1,5 @@
 import { Box, ui } from "@adamjanicki/ui";
+import Link from "src/components/Link";
 import useDocumentTitle from "src/hooks/useDocumentTitle";
 
 export default function Home() {
@@ -13,7 +14,7 @@ export default function Home() {
         <ui.img
           src="/monsters/images/ray.webp"
           alt=""
-          style={{ width: "min(300px, 30vw)" }}
+          style={{ width: "min(300px, 25vw)" }}
         />
         <ui.h1 className="home-title-text">Monsters</ui.h1>
       </Box>
@@ -27,6 +28,8 @@ export default function Home() {
       >
         A simple Pokémon toolkit for discovering new battle combos, movesets,
         and more!
+        <br />
+        <Link to="/dex">View the Dex</Link>
       </ui.p>
     </Box>
   );

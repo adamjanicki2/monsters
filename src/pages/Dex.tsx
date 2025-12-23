@@ -29,11 +29,9 @@ export default function Dex() {
   const sortedPokemon = useMemo(() => {
     if (!pokemon) return null;
 
-    const copy = pokemon;
-
     const dir = sortDir === "asc" ? 1 : -1;
 
-    copy.toSorted((a, b) => {
+    pokemon.sort((a, b) => {
       const aDex = a.dexNumber;
       const bDex = b.dexNumber;
 
@@ -53,7 +51,7 @@ export default function Dex() {
       return res !== 0 ? res : (aDex - bDex) * dir;
     });
 
-    return copy;
+    return pokemon;
   }, [pokemon, sortKey, sortDir]);
 
   if (error || (!loading && !pokemon)) {
@@ -146,20 +144,27 @@ export default function Dex() {
                 </ui.strong>
               </Box>
               <Box
-                vfx={{ axis: "x", gap: "xs", align: "center" }}
+                vfx={{
+                  axis: "x",
+                  align: "center",
+                  gap: "s",
+                  justify: "between",
+                }}
                 style={{ flex: 1 }}
               >
-                {mon.type.map((type) => (
-                  <TypeBadge type={type} key={type} />
-                ))}
-              </Box>
-              <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
-                <Tooltip offset={4} tooltipContent={tooltipContent}>
-                  <BigBadge type={badgeType} vfx={{ italics: true }}>
-                    {String(effectiveBaseTotal)}
-                  </BigBadge>
-                </Tooltip>
-                <ui.strong>{baseTotal}</ui.strong>
+                <Box vfx={{ axis: "x", gap: "xs", align: "center" }}>
+                  {mon.type.map((type) => (
+                    <TypeBadge type={type} key={type} />
+                  ))}
+                </Box>
+                <Box vfx={{ axis: "x", align: "center", gap: "xs" }}>
+                  <Tooltip offset={4} tooltipContent={tooltipContent}>
+                    <BigBadge type={badgeType} vfx={{ italics: true }}>
+                      {String(effectiveBaseTotal)}
+                    </BigBadge>
+                  </Tooltip>
+                  <ui.strong>{baseTotal}</ui.strong>
+                </Box>
               </Box>
             </Link>
           );

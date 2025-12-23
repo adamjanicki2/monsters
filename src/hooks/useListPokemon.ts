@@ -44,7 +44,7 @@ export default function useListPokemon() {
             ...computeAttackingInfo(pokemon),
           };
         })
-        .filter(Boolean) as readonly PokemonFragment[])
+        .filter(Boolean) as PokemonFragment[])
     : undefined;
 
   return { pokemon, loading, error };
