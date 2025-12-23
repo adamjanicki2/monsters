@@ -1,6 +1,6 @@
 import useQuery from "src/hooks/useQuery";
 import type { Pokemon as GQLPokemon } from "@favware/graphql-pokemon";
-import { computeAttackingInfo } from "src/utils/helpers";
+import { computeAttackingInfo, makeIconSprite } from "src/utils/helpers";
 import { pokemon as dex, PokemonKey, Type } from "src/utils/pokemon";
 import { PokemonFragment } from "src/utils/types";
 
@@ -37,14 +37,14 @@ export default function useListPokemon() {
             key,
             dexNumber: pokemon.num,
             baseTotal: pokemon.baseStatsTotal,
-            sprite: `https://play.pokemonshowdown.com/sprites/dex/${pokemon.key}.png`,
+            sprite: makeIconSprite(pokemon.key),
             type: pokemon.types.map(
               (type) => type.name.toLowerCase() as Type
             ) as unknown as PokemonFragment["type"],
             ...computeAttackingInfo(pokemon),
           };
         })
-        .filter(Boolean) as readonly PokemonFragment[])
+        .filter(Boolean) as PokemonFragment[])
     : undefined;
 
   return { pokemon, loading, error };

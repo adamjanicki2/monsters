@@ -9,51 +9,32 @@ import useListPokemon from "src/hooks/useListPokemon";
 import { getEffectiveBadgeInfo } from "src/pages/ViewPokemon";
 import { padDexNumber } from "src/utils/helpers";
 
-const dexSortKeys = ["dex", "name", "effective", "base"] as const;
+const dexSortKeys = [
+  "dexNumber",
+  "name",
+  "effectiveBaseTotal",
+  "baseTotal",
+] as const;
 type DexSortKey = (typeof dexSortKeys)[number];
 type SortDir = "desc" | "asc";
 
 const sortLabels = {
-  dex: "Dex #",
+  dexNumber: "Dex #",
   name: "Name",
-  effective: "Stat total (effective)",
-  base: "Stat total (base)",
+  effectiveBaseTotal: "Stat total (effective)",
+  baseTotal: "Stat total (base)",
 } as const;
 
 export default function Dex() {
   const { pokemon, loading, error } = useListPokemon();
-
-  const [sortKey, setSortKey] = useState<DexSortKey>("dex");
+  const [sortKey, setSortKey] = useState<DexSortKey>("dexNumber");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const sortedPokemon = useMemo(() => {
     if (!pokemon) return null;
+    pokemon.sort((a, b) => cmp(a[sortKey], b[sortKey], sortDir));
 
-    const copy = pokemon;
-
-    const dir = sortDir === "asc" ? 1 : -1;
-
-    copy.toSorted((a, b) => {
-      const aDex = a.dexNumber;
-      const bDex = b.dexNumber;
-
-      if (sortKey === "dex") return (aDex - bDex) * dir;
-
-      if (sortKey === "name") {
-        const res = String(a.name).localeCompare(String(b.name));
-        return res !== 0 ? res * dir : (aDex - bDex) * dir;
-      }
-
-      if (sortKey === "effective") {
-        const res = (a.effectiveBaseTotal - b.effectiveBaseTotal) * dir;
-        return res !== 0 ? res : (aDex - bDex) * dir;
-      }
-
-      const res = (a.baseTotal - b.baseTotal) * dir;
-      return res !== 0 ? res : (aDex - bDex) * dir;
-    });
-
-    return copy;
+    return pokemon;
   }, [pokemon, sortKey, sortDir]);
 
   if (error || (!loading && !pokemon)) {
@@ -146,20 +127,27 @@ export default function Dex() {
                 </ui.strong>
               </Box>
               <Box
-                vfx={{ axis: "x", gap: "xs", align: "center" }}
+                vfx={{
+                  axis: "x",
+                  align: "center",
+                  gap: "s",
+                  justify: "between",
+                }}
                 style={{ flex: 1 }}
               >
-                {mon.type.map((type) => (
-                  <TypeBadge type={type} key={type} />
-                ))}
-              </Box>
-              <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
-                <Tooltip offset={4} tooltipContent={tooltipContent}>
-                  <BigBadge type={badgeType} vfx={{ italics: true }}>
-                    {String(effectiveBaseTotal)}
-                  </BigBadge>
-                </Tooltip>
-                <ui.strong>{baseTotal}</ui.strong>
+                <Box vfx={{ axis: "x", gap: "xs", align: "center" }}>
+                  {mon.type.map((type) => (
+                    <TypeBadge type={type} key={type} />
+                  ))}
+                </Box>
+                <Box vfx={{ axis: "x", align: "center", gap: "xs" }}>
+                  <Tooltip offset={4} tooltipContent={tooltipContent}>
+                    <BigBadge type={badgeType} vfx={{ italics: true }}>
+                      {String(effectiveBaseTotal)}
+                    </BigBadge>
+                  </Tooltip>
+                  <ui.strong>{baseTotal}</ui.strong>
+                </Box>
               </Box>
             </Link>
           );
@@ -183,4 +171,13 @@ function Wrapper({ children }: { children: React.ReactNode }) {
       </Box>
     </Page>
   );
+}
+
+function cmp<T extends string | number>(a: T, b: T, dir: SortDir) {
+  const result =
+    typeof a === "string"
+      ? a.localeCompare(b as string)
+      : Number(a) - Number(b);
+
+  return dir === "asc" ? result : -result;
 }

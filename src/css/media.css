@@ -5,7 +5,7 @@
   display: flex;
 }
 .page-width {
-  width: 64%;
+  width: 60%;
 }
 .type-section {
   width: min(450px, 100%);

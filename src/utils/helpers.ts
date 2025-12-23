@@ -49,7 +49,6 @@ function computeWeaknesses(
     return map as Record<Type, number>;
   };
 
-  // Dual-type logic
   const map1 = buildMultiplierMap(type1);
   const map2 = buildMultiplierMap(type2);
 
@@ -173,3 +172,6 @@ export function padDexNumber(dexNo: number): string {
 
   return "0".repeat(missingChars) + str;
 }
+
+export const makeIconSprite = (key: string) =>
+  `https://play.pokemonshowdown.com/sprites/dex/${key}.png`;
