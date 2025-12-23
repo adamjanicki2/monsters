@@ -9,47 +9,30 @@ import useListPokemon from "src/hooks/useListPokemon";
 import { getEffectiveBadgeInfo } from "src/pages/ViewPokemon";
 import { padDexNumber } from "src/utils/helpers";
 
-const dexSortKeys = ["dex", "name", "effective", "base"] as const;
+const dexSortKeys = [
+  "dexNumber",
+  "name",
+  "effectiveBaseTotal",
+  "baseTotal",
+] as const;
 type DexSortKey = (typeof dexSortKeys)[number];
 type SortDir = "desc" | "asc";
 
 const sortLabels = {
-  dex: "Dex #",
+  dexNumber: "Dex #",
   name: "Name",
-  effective: "Stat total (effective)",
-  base: "Stat total (base)",
+  effectiveBaseTotal: "Stat total (effective)",
+  baseTotal: "Stat total (base)",
 } as const;
 
 export default function Dex() {
   const { pokemon, loading, error } = useListPokemon();
-
-  const [sortKey, setSortKey] = useState<DexSortKey>("dex");
+  const [sortKey, setSortKey] = useState<DexSortKey>("dexNumber");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const sortedPokemon = useMemo(() => {
     if (!pokemon) return null;
-
-    const dir = sortDir === "asc" ? 1 : -1;
-
-    pokemon.sort((a, b) => {
-      const aDex = a.dexNumber;
-      const bDex = b.dexNumber;
-
-      if (sortKey === "dex") return (aDex - bDex) * dir;
-
-      if (sortKey === "name") {
-        const res = String(a.name).localeCompare(String(b.name));
-        return res !== 0 ? res * dir : (aDex - bDex) * dir;
-      }
-
-      if (sortKey === "effective") {
-        const res = (a.effectiveBaseTotal - b.effectiveBaseTotal) * dir;
-        return res !== 0 ? res : (aDex - bDex) * dir;
-      }
-
-      const res = (a.baseTotal - b.baseTotal) * dir;
-      return res !== 0 ? res : (aDex - bDex) * dir;
-    });
+    pokemon.sort((a, b) => cmp(a[sortKey], b[sortKey], sortDir));
 
     return pokemon;
   }, [pokemon, sortKey, sortDir]);
@@ -188,4 +171,13 @@ function Wrapper({ children }: { children: React.ReactNode }) {
       </Box>
     </Page>
   );
+}
+
+function cmp<T extends string | number>(a: T, b: T, dir: SortDir) {
+  const result =
+    typeof a === "string"
+      ? a.localeCompare(b as string)
+      : Number(a) - Number(b);
+
+  return dir === "asc" ? result : -result;
 }
