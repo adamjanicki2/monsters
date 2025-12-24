@@ -6,7 +6,7 @@ import Link from "src/components/Link";
 import Page from "src/components/Page";
 import TypeBadge from "src/components/TypeBadge";
 import useListPokemon from "src/hooks/useListPokemon";
-import { getEffectiveBadgeInfo } from "src/pages/ViewPokemon";
+import { getEffectiveBadgeInfo } from "src/pages/Pokemon";
 import { padDexNumber } from "src/utils/helpers";
 
 const dexSortKeys = [
@@ -121,7 +121,7 @@ export default function Dex() {
                 <ui.strong vfx={{ fontSize: "m" }}>
                   {padDexNumber(dexNumber)}
                 </ui.strong>
-                <ui.img src={sprite} width={60} height={60} />
+                <ui.img src={sprite} width={48} height={48} />
                 <ui.strong vfx={{ fontSize: "m" }} style={{ width: "12ch" }}>
                   {name}
                 </ui.strong>
