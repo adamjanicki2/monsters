@@ -3,7 +3,8 @@ import type {
   PokemonType as GQLPokemonType,
 } from "@favware/graphql-pokemon";
 import type { AttackerType, Pokemon, PokemonKey, Type } from "src/utils/types";
-import { types as allTypes } from "src/utils/pokemon";
+import { types as allTypes } from "src/utils/types";
+import pokemon from "src/data/pokemon";
 
 const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites";
 
@@ -175,3 +176,7 @@ export function padDexNumber(dexNo: number): string {
 
 export const makeIconSprite = (key: string) =>
   `https://play.pokemonshowdown.com/sprites/dex/${key}.png`;
+
+export function getProperName(name: string): string | undefined {
+  return (pokemon as Record<string, string>)[name];
+}

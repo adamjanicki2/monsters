@@ -1,4 +1,38 @@
-import type { PokemonKey, Type, Stat } from "src/utils/pokemon";
+import type { PokemonKey } from "src/data/pokemon";
+
+export const types = [
+  "normal",
+  "fire",
+  "water",
+  "electric",
+  "grass",
+  "ice",
+  "fighting",
+  "poison",
+  "ground",
+  "flying",
+  "psychic",
+  "bug",
+  "rock",
+  "ghost",
+  "dragon",
+  "dark",
+  "steel",
+  "fairy",
+] as const;
+
+export const stats = [
+  "hp",
+  "attack",
+  "defense",
+  "specialattack",
+  "specialdefense",
+  "speed",
+] as const;
+
+type Stat = (typeof stats)[number];
+
+type Type = (typeof types)[number];
 
 type Optional<T> = T | null | undefined;
 
@@ -68,9 +102,9 @@ export type {
   PokemonKey,
   Pokemon,
   PokemonFragment,
-  Type,
   AttackerType,
   Rarity,
   Ability,
+  Type,
   Stat,
 };

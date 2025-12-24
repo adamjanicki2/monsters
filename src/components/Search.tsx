@@ -4,7 +4,7 @@ import { FullOptions, Searcher } from "fast-fuzzy";
 import { useEffect, useRef, useState } from "react";
 import { UnstyledLink } from "src/components/Link";
 import { makeIconSprite } from "src/utils/helpers";
-import { pokemon, PokemonKey, pokemonKeys } from "src/utils/pokemon";
+import pokemon, { type PokemonKey, pokemonKeys } from "src/data/pokemon";
 import "src/components/search.css";
 
 type SearchResultType = "pokemon";
