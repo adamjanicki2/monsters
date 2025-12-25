@@ -13,23 +13,26 @@ import { useParams } from "react-router";
 import Page from "src/components/Page";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
+import dex, { PokemonKey, pokemonKeys } from "src/data/pokemon";
 import {
-  getProperName,
+  type Pokemon,
+  type Type,
+  type Stat,
+  type PokemonFragment,
   stats,
   types,
-  pokemonKeys,
-  pokemon as dex,
-} from "src/utils/pokemon";
-import type { Pokemon, Type, Stat, PokemonFragment } from "src/utils/types";
+} from "src/utils/types";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import TypeBadge from "src/components/TypeBadge";
 import BigBadge from "src/components/BigBadge";
 import Link from "src/components/Link";
+import Header, { Subheader } from "src/components/Header";
+import SimpleTable from "src/components/SimpleTable";
 
-export default function ViewPokemon() {
+export default function Pokemon() {
   const params = useParams<{ slug: string }>();
   const key = assertDefined(params.slug);
-  const properName = getProperName(key);
+  const properName = dex[key as PokemonKey] as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
 
@@ -50,7 +53,7 @@ export default function ViewPokemon() {
   return (
     <Page documentTitle={properName}>
       <Box vfx={{ axis: "y", gap: "l", paddingY: "l", width: "full" }}>
-        <Header pokemon={pokemon} name={properName} />
+        <PageHeader pokemon={pokemon} name={properName} />
         {loading || !pokemon ? (
           <Box vfx={{ width: "full" }}>
             <Spinner />
@@ -102,15 +105,10 @@ function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-function Header({ pokemon, name }: { pokemon?: Pokemon; name: string }) {
+function PageHeader({ pokemon, name }: { pokemon?: Pokemon; name: string }) {
   return (
     <Box vfx={{ axis: "x", align: "center", gap: "m", wrap: true }}>
-      <ui.h1
-        className="page-title-text"
-        vfx={{ fontWeight: 9, margin: "none" }}
-      >
-        {name}
-      </ui.h1>
+      <Header>{name}</Header>
       {pokemon && pokemon.rarity && (
         <BigBadge vfx={{ height: "fit" }} type="success">
           {pokemon.rarity}
@@ -146,7 +144,7 @@ function IntroInfo({ pokemon }: { pokemon: Pokemon }) {
           <ui.strong vfx={{ color: "muted" }}>{pokemon.desc}</ui.strong>
         </Box>
 
-        <KeyValueGrid
+        <SimpleTable
           rows={[
             ["Height", formatMeters(pokemon.height)],
             ["Weight", formatKg(pokemon.weight)],
@@ -229,11 +227,9 @@ function MainGrid({ pokemon }: { pokemon: Pokemon }) {
 
 function SectionCard({
   title,
-  right,
   children,
 }: {
   title: string;
-  right?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -248,50 +244,8 @@ function SectionCard({
         shadow: "subtle",
       }}
     >
-      <Box
-        vfx={{
-          axis: "x",
-          justify: "between",
-          align: "center",
-          wrap: true,
-          gap: "s",
-        }}
-      >
-        <Subheader>{title.toUpperCase()}</Subheader>
-        {right && (
-          <Box vfx={{ axis: "x", gap: "s", align: "center" }}>{right}</Box>
-        )}
-      </Box>
-
+      <Subheader>{title}</Subheader>
       {children}
-    </Box>
-  );
-}
-
-function KeyValueGrid({
-  rows,
-}: {
-  rows: Array<[string, React.ReactNode] | null>;
-}) {
-  return (
-    <Box
-      style={{
-        display: "grid",
-        gridTemplateColumns: "140px 1fr",
-        gap: "8px 12px",
-        alignItems: "baseline",
-      }}
-    >
-      {rows.map((row) => {
-        if (!row) return null;
-        const [k, v] = row;
-        return (
-          <React.Fragment key={k}>
-            <ui.span vfx={{ color: "muted" }}>{k}</ui.span>
-            <ui.strong>{v}</ui.strong>
-          </React.Fragment>
-        );
-      })}
     </Box>
   );
 }
@@ -470,14 +424,6 @@ function FlavorSection({ pokemon }: { pokemon: Pokemon }) {
         </ui.em>
       </Box>
     </SectionCard>
-  );
-}
-
-function Subheader({ children }: { children: string }) {
-  return (
-    <ui.h2 vfx={{ margin: "none", fontWeight: 9 }}>
-      {children.toUpperCase()}
-    </ui.h2>
   );
 }
 

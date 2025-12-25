@@ -1,8 +1,8 @@
 import useQuery from "src/hooks/useQuery";
 import type { Pokemon as GQLPokemon } from "@favware/graphql-pokemon";
 import { computeAttackingInfo, makeIconSprite } from "src/utils/helpers";
-import { pokemon as dex, PokemonKey, Type } from "src/utils/pokemon";
-import { PokemonFragment } from "src/utils/types";
+import dex, { PokemonKey } from "src/data/pokemon";
+import { PokemonFragment, Type } from "src/utils/types";
 
 export default function useListPokemon() {
   const query = `

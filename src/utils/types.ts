@@ -1,4 +1,39 @@
-import type { PokemonKey, Type, Stat } from "src/utils/pokemon";
+import type { MoveKey } from "src/data/moves";
+import type { PokemonKey } from "src/data/pokemon";
+
+export const types = [
+  "normal",
+  "fire",
+  "water",
+  "electric",
+  "grass",
+  "ice",
+  "fighting",
+  "poison",
+  "ground",
+  "flying",
+  "psychic",
+  "bug",
+  "rock",
+  "ghost",
+  "dragon",
+  "dark",
+  "steel",
+  "fairy",
+] as const;
+
+export const stats = [
+  "hp",
+  "attack",
+  "defense",
+  "specialattack",
+  "specialdefense",
+  "speed",
+] as const;
+
+type Stat = (typeof stats)[number];
+
+type Type = (typeof types)[number];
 
 type Optional<T> = T | null | undefined;
 
@@ -9,7 +44,7 @@ type Ability = {
 };
 
 type Rarity = "mythical" | "legendary";
-type AttackerType = "physical" | "special";
+type Category = "physical" | "special";
 
 type Pokemon = {
   readonly key: PokemonKey;
@@ -20,7 +55,7 @@ type Pokemon = {
     readonly second: Optional<Ability>;
     readonly hidden: Optional<Ability>;
   };
-  readonly attackerType: AttackerType;
+  readonly attackerType: Category;
   readonly baseStats: Record<Stat, number>;
   readonly baseTotal: number;
   readonly effectiveBaseTotal: number;
@@ -64,13 +99,28 @@ type PokemonFragment = Pick<
   | "dexNumber"
 >;
 
+type Move = {
+  readonly key: MoveKey;
+  readonly name: string;
+  readonly accuracy: number | true;
+  readonly power: number;
+  readonly category: Category;
+  readonly priority: number;
+  readonly pp: number;
+  readonly type: Type;
+  readonly zPower: number;
+  readonly target: string;
+  readonly desc: string;
+};
+
 export type {
   PokemonKey,
   Pokemon,
   PokemonFragment,
-  Type,
-  AttackerType,
+  Category,
   Rarity,
   Ability,
+  Type,
   Stat,
+  Move,
 };

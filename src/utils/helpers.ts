@@ -2,8 +2,8 @@ import type {
   Pokemon as GQLPokemon,
   PokemonType as GQLPokemonType,
 } from "@favware/graphql-pokemon";
-import type { AttackerType, Pokemon, PokemonKey, Type } from "src/utils/types";
-import { types as allTypes } from "src/utils/pokemon";
+import type { Category, Pokemon, PokemonKey, Type } from "src/utils/types";
+import { types as allTypes } from "src/utils/types";
 
 const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites";
 
@@ -80,7 +80,7 @@ function computeWeaknesses(
 export function computeAttackingInfo(pokemon: GQLPokemon) {
   const { baseStats, baseStatsTotal } = pokemon;
   const { attack, specialattack } = baseStats;
-  let attackerType: AttackerType = "special";
+  let attackerType: Category = "special";
   let effectiveBaseTotal = baseStatsTotal;
 
   if (specialattack >= attack) {
@@ -174,4 +174,19 @@ export function padDexNumber(dexNo: number): string {
 }
 
 export const makeIconSprite = (key: string) =>
-  `https://play.pokemonshowdown.com/sprites/dex/${key}.png`;
+  `${SPRITE_BASE}/home-centered/${key}.png`;
+
+export function partition<K extends string, T extends object>(
+  arr: T[],
+  partitionKey: (item: T) => K
+): Map<K, T[]> {
+  const map = new Map<K, T[]>();
+  arr.forEach((item) => {
+    const key = partitionKey(item);
+    const items = map.get(key) || [];
+    items.push(item);
+    map.set(key, items);
+  });
+
+  return map;
+}

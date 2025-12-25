@@ -1,21 +1,40 @@
+import React from "react";
 import { Box, Icon, IconButton, IconInput, Layer, ui } from "@adamjanicki/ui";
-import { getDeviceType } from "@adamjanicki/ui/functions";
+import { assertDefined, getDeviceType } from "@adamjanicki/ui/functions";
 import { FullOptions, Searcher } from "fast-fuzzy";
 import { useEffect, useRef, useState } from "react";
 import { UnstyledLink } from "src/components/Link";
-import { makeIconSprite } from "src/utils/helpers";
-import { pokemon, PokemonKey, pokemonKeys } from "src/utils/pokemon";
+import { makeIconSprite, partition } from "src/utils/helpers";
+import pokemon, { type PokemonKey, pokemonKeys } from "src/data/pokemon";
 import "src/components/search.css";
+import type { Category, Type } from "src/utils/types";
+import moves, { MoveKey, moveKeys } from "src/data/moves";
+import TypeBadge from "src/components/TypeBadge";
 
-type SearchResultType = "pokemon";
 type PokemonResult = {
-  key: string;
-  name: string;
+  readonly type: "dex";
+  readonly data: {
+    readonly key: string;
+    readonly name: string;
+  };
 };
-type SearchResult = {
-  type: SearchResultType;
-  data: PokemonResult;
+
+type MoveResult = {
+  readonly type: "move";
+  readonly data: {
+    readonly key: string;
+    readonly name: string;
+    readonly type: Type;
+    readonly category: Category;
+  };
 };
+
+type SearchResult = PokemonResult | MoveResult;
+
+const headers = {
+  dex: "Pokemon",
+  move: "Move",
+} as const;
 
 type Props = {
   open: boolean;
@@ -23,26 +42,46 @@ type Props = {
 };
 
 type MatchResult = {
-  results: readonly SearchResult[];
+  results: Map<SearchResult["type"], SearchResult[]>;
   matches: number;
 };
 
-const searcher = new Searcher<PokemonKey, FullOptions<PokemonKey>>(
-  pokemonKeys as PokemonKey[],
-  {
-    threshold: 0.5,
-    ignoreCase: true,
-  }
-);
+type SearchKey = PokemonKey | MoveKey;
+const searchKeys = (pokemonKeys as Array<SearchKey>).concat(moveKeys);
 
-function search(query: string, limit: number): MatchResult {
+const searcher = new Searcher<SearchKey, FullOptions<SearchKey>>(searchKeys, {
+  threshold: 0.7,
+  ignoreCase: true,
+});
+
+function search(query: string): MatchResult {
   const rawResults = searcher.search(query);
-  const results: SearchResult[] = rawResults.slice(0, limit).map((key) => ({
-    type: "pokemon",
-    data: { key, name: pokemon[key] },
-  }));
+  const results: SearchResult[] = rawResults.slice(0, 20).map((key) => {
+    if (key in pokemon) {
+      const name = pokemon[key as PokemonKey];
+      return {
+        type: "dex",
+        data: {
+          key: key as PokemonKey,
+          name,
+        },
+      } as SearchResult;
+    }
+
+    const move = moves[key as MoveKey];
+    return {
+      type: "move",
+      data: {
+        key: key as MoveKey,
+        name: move.name,
+        type: move.type,
+        category: move.category,
+      },
+    } as SearchResult;
+  });
+
   return {
-    results,
+    results: partition(results, (item) => item.type),
     matches: rawResults.length,
   };
 }
@@ -64,12 +103,10 @@ function Empty({ query }: { query: string }) {
   );
 }
 
-const LIMIT = 20;
-
 export default function Search({ open, onClose }: Props) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim();
-  const { results, matches } = search(normalizedQuery, LIMIT);
+  const { results, matches } = search(normalizedQuery);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -81,7 +118,9 @@ export default function Search({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const showEmpty = results.length === 0 && normalizedQuery.length > 0;
+  const showEmpty = matches === 0 && normalizedQuery.length > 0;
+
+  const keys = results.keys().toArray().sort();
 
   return (
     <Layer
@@ -141,13 +180,31 @@ export default function Search({ open, onClose }: Props) {
           ) : (
             <Box vfx={{ axis: "y", padding: "s" }}>
               {showEmpty && <Empty query={normalizedQuery} />}
-              {results.map((result) => (
-                <PokemonSearchResult
-                  key={result.data.key}
-                  result={result}
-                  onClick={onClose}
-                />
-              ))}
+              {keys.map((key) => {
+                const items = assertDefined(results.get(key));
+                return (
+                  <React.Fragment key={key}>
+                    <ui.h3
+                      vfx={{
+                        margin: "s",
+                        paddingBottom: "xs",
+                        fontSize: "m",
+                        fontWeight: 9,
+                        borderBottom: true,
+                      }}
+                    >
+                      {headers[key]}
+                    </ui.h3>
+                    {items.map((item) => (
+                      <Result
+                        result={item}
+                        onClick={onClose}
+                        key={item.data.key}
+                      />
+                    ))}
+                  </React.Fragment>
+                );
+              })}
             </Box>
           )}
         </Box>
@@ -162,7 +219,7 @@ export default function Search({ open, onClose }: Props) {
         >
           <ui.span vfx={{ fontSize: "s", color: "muted" }}>
             {matches > 0
-              ? `Showing ${results.length} of ${matches} result${
+              ? `Showing ${results.size} of ${matches} result${
                   matches === 1 ? "" : "s"
                 }`
               : "Hint: try typing!"}
@@ -178,10 +235,13 @@ type ResultRowProps = {
   onClick?: () => void;
 };
 
-function PokemonSearchResult({ result, onClick }: ResultRowProps) {
+function Result({ result, onClick }: ResultRowProps) {
+  const { type, data } = result;
+  const to = `/${type}/${data.key}`;
+
   return (
     <UnstyledLink
-      to={`/dex/${result.data.key}`}
+      to={to}
       onClick={onClick}
       vfx={{
         axis: "x",
@@ -189,22 +249,44 @@ function PokemonSearchResult({ result, onClick }: ResultRowProps) {
         justify: "between",
         gap: "m",
         width: "full",
-        padding: "m",
+        padding: "s",
         radius: "rounded",
         color: "inherit",
       }}
       className="dex-search-result"
     >
-      <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
-        <ui.img
-          src={makeIconSprite(result.data.key)}
-          alt={result.data.name}
-          width={60}
-          height={60}
-        />
-        <ui.strong vfx={{ fontSize: "m" }}>{result.data.name}</ui.strong>
-      </Box>
+      {renderInnerContent(result)}
       <Icon icon="chevron-right" vfx={{ color: "muted" }} />
     </UnstyledLink>
   );
 }
+
+const renderInnerContent = (result: SearchResult) => {
+  switch (result.type) {
+    case "dex":
+      return renderPokemonResult(result);
+    case "move":
+      return renderMoveResult(result);
+    default:
+      throw new Error("unexpected default case");
+  }
+};
+
+const renderPokemonResult = (result: PokemonResult) => (
+  <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
+    <ui.strong vfx={{ fontSize: "m" }}>{result.data.name}</ui.strong>
+    <ui.img
+      src={makeIconSprite(result.data.key)}
+      alt={result.data.name}
+      width={48}
+      height={48}
+    />
+  </Box>
+);
+
+const renderMoveResult = (result: MoveResult) => (
+  <Box vfx={{ axis: "x", align: "center", gap: "s", paddingY: "s" }}>
+    <ui.strong vfx={{ fontSize: "m" }}>{result.data.name}</ui.strong>
+    <TypeBadge type={result.data.type} />
+  </Box>
+);

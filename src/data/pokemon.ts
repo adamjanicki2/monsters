@@ -1,4 +1,4 @@
-export const pokemon = {
+const pokemon = {
   bulbasaur: "Bulbasaur",
   ivysaur: "Ivysaur",
   venusaur: "Venusaur",
@@ -1028,43 +1028,6 @@ export const pokemon = {
   // pecharunt: "Pecharunt",
 } as const;
 
-export const pokemonKeys = Object.keys(pokemon) as readonly PokemonKey[];
-
-export const types = [
-  "normal",
-  "fire",
-  "water",
-  "electric",
-  "grass",
-  "ice",
-  "fighting",
-  "poison",
-  "ground",
-  "flying",
-  "psychic",
-  "bug",
-  "rock",
-  "ghost",
-  "dragon",
-  "dark",
-  "steel",
-  "fairy",
-] as const;
-
-export const stats = [
-  "hp",
-  "attack",
-  "defense",
-  "specialattack",
-  "specialdefense",
-  "speed",
-] as const;
-
-export type Stat = (typeof stats)[number];
-
 export type PokemonKey = keyof typeof pokemon;
-export type Type = (typeof types)[number];
-
-export function getProperName(name: string): string | undefined {
-  return (pokemon as Record<string, string>)[name];
-}
+export const pokemonKeys = Object.keys(pokemon) as readonly PokemonKey[];
+export default pokemon;
