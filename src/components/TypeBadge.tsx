@@ -1,4 +1,4 @@
-import type { Type } from "src/utils/pokemon";
+import type { Type } from "src/utils/types";
 import { Box } from "@adamjanicki/ui";
 import BigBadge from "src/components/BigBadge";
 

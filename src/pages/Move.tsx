@@ -16,12 +16,6 @@ export default function Move() {
   const accuracy = localMove?.accuracy as true | number | undefined;
   const { move, loading, error } = useGetMove({ key, accuracy });
 
-  console.log({
-    key,
-    localMove,
-    accuracy,
-  });
-
   if (accuracy === undefined) {
     return <NotFound />;
   }
