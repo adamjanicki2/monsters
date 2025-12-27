@@ -253,7 +253,7 @@ function Result({ result, onClick }: ResultRowProps) {
         radius: "rounded",
         color: "inherit",
       }}
-      className="dex-search-result"
+      className="hover-background"
     >
       {renderInnerContent(result)}
       <Icon icon="chevron-right" vfx={{ color: "muted" }} />

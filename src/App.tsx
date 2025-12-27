@@ -8,6 +8,7 @@ import NotFound from "src/pages/NotFound";
 import Pokemon from "src/pages/Pokemon";
 import Move from "src/pages/Move";
 import Dex from "src/pages/Dex";
+import ScrollTop from "src/components/ScrollTop";
 
 export const client = new ApolloClient({
   link: new HttpLink({
@@ -20,6 +21,7 @@ const App = () => {
   return (
     <ApolloProvider client={client}>
       <BrowserRouter basename="/monsters">
+        <ScrollTop />
         <Nav />
         <Routes>
           <Route path="/" element={<Home />} />

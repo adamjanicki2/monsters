@@ -8,6 +8,7 @@ import {
   assertDefined,
   Icon,
   Select,
+  useScrollToHash,
 } from "@adamjanicki/ui";
 import { Tooltip } from "@adamjanicki/ui-extended";
 import { useParams } from "react-router";
@@ -27,8 +28,8 @@ import {
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import TypeBadge from "src/components/TypeBadge";
 import BigBadge from "src/components/BigBadge";
-import Link from "src/components/Link";
-import Header, { Subheader } from "src/components/Header";
+import Link, { UnstyledLink } from "src/components/Link";
+import Header, { CopyableSubheader, Subheader } from "src/components/Header";
 import SimpleTable from "src/components/SimpleTable";
 import useGetMoveset from "src/hooks/useGetMoveset";
 import generations, { Generation } from "src/data/generations";
@@ -39,7 +40,7 @@ export default function Pokemon() {
   const properName = dex[key as PokemonKey] as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
-  const moveResult = useGetMoveset({
+  const movesResult = useGetMoveset({
     key: key as PokemonKey,
     skip: !properName,
   });
@@ -67,15 +68,31 @@ export default function Pokemon() {
             <Spinner />
           </Box>
         ) : (
-          <>
-            <NeighborLinks pokemon={pokemon} />
-            <IntroInfo pokemon={pokemon} />
-            <MainGrid pokemon={pokemon} />
-            <MovesSection {...moveResult} />
-          </>
+          <BodyContainer pokemon={pokemon} movesResult={movesResult} />
         )}
       </Box>
     </Page>
+  );
+}
+
+function BodyContainer({
+  pokemon,
+  movesResult,
+}: {
+  pokemon: Pokemon;
+  movesResult: ReturnType<typeof useGetMoveset>;
+}) {
+  useScrollToHash({ delay: 100 });
+
+  return (
+    <>
+      <NeighborLinks pokemon={pokemon} />
+      <IntroInfo pokemon={pokemon} />
+      <StatsSection pokemon={pokemon} />
+      <FlavorSection pokemon={pokemon} />
+      <TypeEffectivenessSection pokemon={pokemon} />
+      <MovesSection {...movesResult} />
+    </>
   );
 }
 
@@ -209,31 +226,6 @@ function SpritePanel({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-function MainGrid({ pokemon }: { pokemon: Pokemon }) {
-  return (
-    <Box
-      vfx={{
-        axis: "x",
-        gap: "l",
-        wrap: true,
-        align: "start",
-      }}
-    >
-      <Box
-        vfx={{ axis: "y", gap: "l" }}
-        style={{ flex: 1, minWidth: "min(400px, 100%)" }}
-      >
-        <StatsSection pokemon={pokemon} />
-        <FlavorSection pokemon={pokemon} />
-      </Box>
-
-      <Box className="type-section">
-        <TypeEffectivenessSection pokemon={pokemon} />
-      </Box>
-    </Box>
-  );
-}
-
 function SectionCard({
   title,
   children,
@@ -253,7 +245,7 @@ function SectionCard({
         shadow: "subtle",
       }}
     >
-      <Subheader>{title}</Subheader>
+      <CopyableSubheader>{title}</CopyableSubheader>
       {children}
     </Box>
   );
@@ -473,7 +465,7 @@ function MovesSection({
         value={String(generation)}
         options={generationOptions.map(String)}
         onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
-        getOptionLabel={(value) => `Gen ${value}`}
+        getOptionLabel={(value) => `GEN ${value}`}
       />
       {missingKeys.length > 0 && (
         <Alert type="warning">
@@ -496,7 +488,7 @@ function MovesSection({
 }
 
 function MoveItem({ move }: { move: MoveFragment }) {
-  const { name, type, category, power, accuracy } = move;
+  const { name, type, category, power, accuracy, key } = move;
   let accuracyLabel: React.ReactNode = accuracy;
   if (accuracy === true && category === "status") {
     accuracyLabel = "—";
@@ -505,21 +497,24 @@ function MoveItem({ move }: { move: MoveFragment }) {
   }
 
   return (
-    <Box
+    <UnstyledLink
+      to={`/move/${key}`}
       vfx={{
         axis: "x",
         align: "center",
         gap: "xs",
         width: "full",
         padding: "s",
+        radius: "rounded",
       }}
+      className="hover-background"
     >
       <ui.strong style={{ flex: 1 }}>{name}</ui.strong>
       <TypeBadge type={type} />
       <ui.span style={{ width: "15ch" }}>{category}</ui.span>
       <ui.span style={{ width: "4ch" }}>{power <= 0 ? "—" : power}</ui.span>
       <ui.span style={{ width: "4ch" }}>{accuracyLabel}</ui.span>
-    </Box>
+    </UnstyledLink>
   );
 }
 
