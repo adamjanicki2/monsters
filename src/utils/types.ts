@@ -44,7 +44,11 @@ type Ability = {
 };
 
 type Rarity = "mythical" | "legendary";
-type Category = "physical" | "special";
+type Category = "physical" | "special" | "status";
+type AttackerType = "physical" | "special";
+
+export const learnMethods = ["level-up", "machine", "egg", "tutor"] as const;
+type LearnMethod = (typeof learnMethods)[number];
 
 type Pokemon = {
   readonly key: PokemonKey;
@@ -55,7 +59,7 @@ type Pokemon = {
     readonly second: Optional<Ability>;
     readonly hidden: Optional<Ability>;
   };
-  readonly attackerType: Category;
+  readonly attackerType: AttackerType;
   readonly baseStats: Record<Stat, number>;
   readonly baseTotal: number;
   readonly effectiveBaseTotal: number;
@@ -113,6 +117,11 @@ type Move = {
   readonly desc: string;
 };
 
+type MoveFragment = Pick<
+  Move,
+  "key" | "name" | "accuracy" | "power" | "category" | "type"
+>;
+
 export type {
   PokemonKey,
   Pokemon,
@@ -123,4 +132,7 @@ export type {
   Type,
   Stat,
   Move,
+  MoveFragment,
+  AttackerType,
+  LearnMethod,
 };

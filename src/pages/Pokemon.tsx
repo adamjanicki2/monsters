@@ -7,6 +7,8 @@ import {
   Button,
   assertDefined,
   Icon,
+  Select,
+  useScrollToHash,
 } from "@adamjanicki/ui";
 import { Tooltip } from "@adamjanicki/ui-extended";
 import { useParams } from "react-router";
@@ -21,13 +23,18 @@ import {
   type PokemonFragment,
   stats,
   types,
+  MoveFragment,
+  LearnMethod,
+  learnMethods,
 } from "src/utils/types";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import TypeBadge from "src/components/TypeBadge";
 import BigBadge from "src/components/BigBadge";
-import Link from "src/components/Link";
-import Header, { Subheader } from "src/components/Header";
+import Link, { UnstyledLink } from "src/components/Link";
+import Header, { CopyableSubheader, Subheader } from "src/components/Header";
 import SimpleTable from "src/components/SimpleTable";
+import useGetMoveset from "src/hooks/useGetMoveset";
+import generations, { Generation } from "src/data/generations";
 
 export default function Pokemon() {
   const params = useParams<{ slug: string }>();
@@ -35,6 +42,10 @@ export default function Pokemon() {
   const properName = dex[key as PokemonKey] as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
+  const movesResult = useGetMoveset({
+    key: key as PokemonKey,
+    skip: !properName,
+  });
 
   if (!properName) {
     return <NotFound />;
@@ -59,14 +70,31 @@ export default function Pokemon() {
             <Spinner />
           </Box>
         ) : (
-          <>
-            <NeighborLinks pokemon={pokemon} />
-            <IntroInfo pokemon={pokemon} />
-            <MainGrid pokemon={pokemon} />
-          </>
+          <BodyContainer pokemon={pokemon} movesResult={movesResult} />
         )}
       </Box>
     </Page>
+  );
+}
+
+function BodyContainer({
+  pokemon,
+  movesResult,
+}: {
+  pokemon: Pokemon;
+  movesResult: ReturnType<typeof useGetMoveset>;
+}) {
+  useScrollToHash({ delay: 100 });
+
+  return (
+    <>
+      <NeighborLinks pokemon={pokemon} />
+      <IntroInfo pokemon={pokemon} />
+      <StatsSection pokemon={pokemon} />
+      <FlavorSection pokemon={pokemon} />
+      <TypeEffectivenessSection pokemon={pokemon} />
+      <MovesSection {...movesResult} />
+    </>
   );
 }
 
@@ -200,31 +228,6 @@ function SpritePanel({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-function MainGrid({ pokemon }: { pokemon: Pokemon }) {
-  return (
-    <Box
-      vfx={{
-        axis: "x",
-        gap: "l",
-        wrap: true,
-        align: "start",
-      }}
-    >
-      <Box
-        vfx={{ axis: "y", gap: "l" }}
-        style={{ flex: 1, minWidth: "min(400px, 100%)" }}
-      >
-        <StatsSection pokemon={pokemon} />
-        <FlavorSection pokemon={pokemon} />
-      </Box>
-
-      <Box className="type-section">
-        <TypeEffectivenessSection pokemon={pokemon} />
-      </Box>
-    </Box>
-  );
-}
-
 function SectionCard({
   title,
   children,
@@ -244,7 +247,7 @@ function SectionCard({
         shadow: "subtle",
       }}
     >
-      <Subheader>{title}</Subheader>
+      <CopyableSubheader>{title}</CopyableSubheader>
       {children}
     </Box>
   );
@@ -424,6 +427,110 @@ function FlavorSection({ pokemon }: { pokemon: Pokemon }) {
         </ui.em>
       </Box>
     </SectionCard>
+  );
+}
+
+function MovesSection({
+  loading,
+  error,
+  moves,
+}: ReturnType<typeof useGetMoveset>) {
+  const [generation, setGeneration] = useState<Generation>(7);
+
+  if (loading) {
+    return (
+      <SectionCard title="Movesets">
+        <Spinner />
+      </SectionCard>
+    );
+  }
+
+  if (error || !moves) {
+    return (
+      <SectionCard title="Movesets">
+        <Alert type="error">
+          {error || "There was an error loading movesets"}
+        </Alert>
+      </SectionCard>
+    );
+  }
+
+  const movesetForGeneration =
+    moves.get(generation) || new Map<LearnMethod, MoveFragment[]>();
+
+  return (
+    <SectionCard title="Movesets">
+      <Select
+        value={String(generation)}
+        options={generations.map(String)}
+        onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
+        getOptionLabel={(value) => `GEN ${value}`}
+      />
+      {movesetForGeneration.size <= 0 ? (
+        <Alert type="warning">
+          No moves could be found in Gen {generation}. This guy is most likely
+          not in the game.
+        </Alert>
+      ) : (
+        <Box vfx={{ axis: "y", gap: "s" }}>
+          {learnMethods.map((learnMethod) => {
+            const moves = movesetForGeneration.get(learnMethod);
+            if (!moves) {
+              return null;
+            }
+
+            return (
+              <Box vfx={{ axis: "y" }} key={learnMethod}>
+                <ui.h3 vfx={{ fontWeight: 9, margin: "none", padding: "s" }}>
+                  {learnMethodHeaders[learnMethod]}
+                </ui.h3>
+                {moves.map((move) => (
+                  <MoveItem key={move.key} move={move} />
+                ))}
+              </Box>
+            );
+          })}
+        </Box>
+      )}
+    </SectionCard>
+  );
+}
+
+const learnMethodHeaders: Record<LearnMethod, string> = {
+  "level-up": "LEVEL-UP",
+  machine: "TM",
+  egg: "EGG",
+  tutor: "MOVE TUTOR",
+};
+
+function MoveItem({ move }: { move: MoveFragment }) {
+  const { name, type, category, power, accuracy, key } = move;
+  let accuracyLabel: React.ReactNode = accuracy;
+  if (accuracy === true && category === "status") {
+    accuracyLabel = "—";
+  } else if (accuracy === true) {
+    accuracyLabel = "∞";
+  }
+
+  return (
+    <UnstyledLink
+      to={`/move/${key}`}
+      vfx={{
+        axis: "x",
+        align: "center",
+        gap: "xs",
+        width: "full",
+        padding: "s",
+        radius: "rounded",
+      }}
+      className="hover-background"
+    >
+      <ui.strong style={{ flex: 1 }}>{name}</ui.strong>
+      <TypeBadge type={type} />
+      <ui.span style={{ width: "15ch" }}>{category}</ui.span>
+      <ui.span style={{ width: "4ch" }}>{power <= 0 ? "—" : power}</ui.span>
+      <ui.span style={{ width: "4ch" }}>{accuracyLabel}</ui.span>
+    </UnstyledLink>
   );
 }
 

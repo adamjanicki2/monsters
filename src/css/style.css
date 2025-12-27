@@ -4,6 +4,15 @@
   --ajui-link-color: #d10711;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+body * {
+  /* Handles scrolling to octothorpes */
+  scroll-margin-top: 80px;
+}
+
 body {
   font-family: "Funnel Sans", -apple-system, BlinkMacSystemFont,
     "Helvetica Neue", sans-serif;

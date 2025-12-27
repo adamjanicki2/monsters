@@ -51,7 +51,7 @@ export default function Nav() {
 
   return (
     <>
-      <ui.nav vfx={{ paddingY: "s", paddingX: "l" }}>
+      <ui.nav id="nav" vfx={{ paddingY: "s", paddingX: "l" }}>
         <Box
           vfx={{ axis: "x", align: "center", justify: "between" }}
           className="bar-container"

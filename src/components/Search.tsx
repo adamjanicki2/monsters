@@ -109,6 +109,11 @@ export default function Search({ open, onClose }: Props) {
   const { results, matches } = search(normalizedQuery);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  const handleClose = () => {
+    setQuery("");
+    onClose();
+  };
+
   useEffect(() => {
     if (!open) return;
     if (getDeviceType() === "desktop") {
@@ -124,7 +129,7 @@ export default function Search({ open, onClose }: Props) {
 
   return (
     <Layer
-      onClose={onClose}
+      onClose={handleClose}
       vfx={{
         axis: "y",
         align: "center",
@@ -148,7 +153,7 @@ export default function Search({ open, onClose }: Props) {
         <Box vfx={{ axis: "y", gap: "s", padding: "m", borderBottom: true }}>
           <Box vfx={{ axis: "x", align: "center", justify: "between" }}>
             <ui.strong vfx={{ fontSize: "m" }}>Search</ui.strong>
-            <IconButton onClick={onClose} icon="x" />
+            <IconButton onClick={handleClose} icon="x" />
           </Box>
 
           <IconInput
@@ -198,7 +203,7 @@ export default function Search({ open, onClose }: Props) {
                     {items.map((item) => (
                       <Result
                         result={item}
-                        onClick={onClose}
+                        onClick={handleClose}
                         key={item.data.key}
                       />
                     ))}
@@ -253,7 +258,7 @@ function Result({ result, onClick }: ResultRowProps) {
         radius: "rounded",
         color: "inherit",
       }}
-      className="dex-search-result"
+      className="hover-background"
     >
       {renderInnerContent(result)}
       <Icon icon="chevron-right" vfx={{ color: "muted" }} />
