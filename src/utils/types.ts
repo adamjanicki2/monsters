@@ -47,6 +47,9 @@ type Rarity = "mythical" | "legendary";
 type Category = "physical" | "special" | "status";
 type AttackerType = "physical" | "special";
 
+export const learnMethods = ["level-up", "machine", "egg", "tutor"] as const;
+type LearnMethod = (typeof learnMethods)[number];
+
 type Pokemon = {
   readonly key: PokemonKey;
   readonly name: string;
@@ -131,4 +134,5 @@ export type {
   Move,
   MoveFragment,
   AttackerType,
+  LearnMethod,
 };

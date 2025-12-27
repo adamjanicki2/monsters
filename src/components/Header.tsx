@@ -1,4 +1,4 @@
-import { Icon, IconButton, ui, Box } from "@adamjanicki/ui";
+import { IconButton, ui, Box } from "@adamjanicki/ui";
 import { Tooltip } from "@adamjanicki/ui-extended";
 import { useRef, useState } from "react";
 import { idify } from "src/utils/helpers";

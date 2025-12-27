@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { MoveFragment, PokemonKey } from "src/utils/types";
+import type { LearnMethod, MoveFragment, PokemonKey } from "src/utils/types";
 import { useEffect, useState } from "react";
 import pokemon, { baseEvolutions } from "src/data/pokemon";
 import { gameToGen, type Generation } from "src/data/generations";
@@ -14,7 +14,7 @@ type Config = {
 type Result = {
   loading: boolean;
   error?: string;
-  moves: Map<Generation, MoveFragment[]> | undefined;
+  moves: Map<Generation, Map<LearnMethod, MoveFragment[]>> | undefined;
 };
 
 export default function useGetMoveset({ key, skip }: Config): Result {
@@ -42,18 +42,22 @@ export default function useGetMoveset({ key, skip }: Config): Result {
 
     const doApiCalls = async () => {
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
-      let moves = new Map<Generation, MoveFragment[]>();
+      let moves = new Map<Generation, Map<LearnMethod, MoveFragment[]>>();
 
       try {
         const baseMoves = await fetchApi(key, name);
-        moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
+        moves = mergeMaps(moves, baseMoves, (m1, m2) =>
+          mergeMaps(m1, m2, mergeMoveFragments)
+        );
 
         if (baseEvolution && baseEvolutionName) {
           const additionalMoves = await fetchApi(
             baseEvolution,
             baseEvolutionName
           );
-          moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
+          moves = mergeMaps(moves, additionalMoves, (m1, m2) =>
+            mergeMaps(m1, m2, mergeMoveFragments)
+          );
         }
       } catch (e) {
         return setState({
@@ -87,7 +91,7 @@ function formatName(key: string, name: string) {
 
 async function fetchApi(key: string, name: string) {
   const target = `https://pokeapi.co/api/v2/pokemon/${formatName(key, name)}/`;
-  const map = new Map<Generation, MoveFragment[]>();
+  const map = new Map<Generation, Map<LearnMethod, MoveFragment[]>>();
   const used = new Set<string>();
 
   try {
@@ -101,12 +105,16 @@ async function fetchApi(key: string, name: string) {
       if (move) {
         moveData.version_group_details.forEach((groupDetails: any) => {
           const game = groupDetails.version_group.name;
+          const method = groupDetails.move_learn_method.name as LearnMethod;
           const gen = gameToGen[game];
-          const hashKey = `${gen}${moveKey}`;
+          const hashKey = `${gen}${moveKey}${method}`;
           if (gen && !used.has(hashKey)) {
             used.add(hashKey);
-            const movesForGen = map.get(gen) || [];
-            movesForGen.push({ ...move, key: moveKey });
+            const movesForGen =
+              map.get(gen) || new Map<LearnMethod, MoveFragment[]>();
+            const movesForMethod = movesForGen.get(method) || [];
+            movesForMethod.push({ ...move, key: moveKey });
+            movesForGen.set(method, movesForMethod);
             map.set(gen, movesForGen);
           }
         });

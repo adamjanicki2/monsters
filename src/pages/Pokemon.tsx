@@ -24,6 +24,8 @@ import {
   stats,
   types,
   MoveFragment,
+  LearnMethod,
+  learnMethods,
 } from "src/utils/types";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import TypeBadge from "src/components/TypeBadge";
@@ -453,39 +455,53 @@ function MovesSection({
     );
   }
 
-  const missingKeys: string[] = [];
-  const movesetForGeneration = moves.get(generation) || [];
-  const generationOptions = generations.filter(
-    (key) => moves.get(key) && assertDefined(moves.get(key)).length > 0
-  );
+  const movesetForGeneration =
+    moves.get(generation) || new Map<LearnMethod, MoveFragment[]>();
 
   return (
     <SectionCard title="Movesets">
       <Select
         value={String(generation)}
-        options={generationOptions.map(String)}
+        options={generations.map(String)}
         onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
         getOptionLabel={(value) => `GEN ${value}`}
       />
-      {missingKeys.length > 0 && (
+      {movesetForGeneration.size <= 0 ? (
         <Alert type="warning">
-          Missing the following keys: {missingKeys.join(", ")}
-        </Alert>
-      )}
-      {movesetForGeneration.length <= 0 ? (
-        <Alert type="warning">
-          No moves could be found in Gen {generation}.
+          No moves could be found in Gen {generation}. This guy is most likely
+          not in the game.
         </Alert>
       ) : (
-        <Box vfx={{ axis: "y" }}>
-          {movesetForGeneration.map((move) => (
-            <MoveItem move={move} key={move.key} />
-          ))}
+        <Box vfx={{ axis: "y", gap: "s" }}>
+          {learnMethods.map((learnMethod) => {
+            const moves = movesetForGeneration.get(learnMethod);
+            if (!moves) {
+              return null;
+            }
+
+            return (
+              <Box vfx={{ axis: "y" }} key={learnMethod}>
+                <ui.h3 vfx={{ fontWeight: 9, margin: "none", padding: "s" }}>
+                  {learnMethodHeaders[learnMethod]}
+                </ui.h3>
+                {moves.map((move) => (
+                  <MoveItem key={move.key} move={move} />
+                ))}
+              </Box>
+            );
+          })}
         </Box>
       )}
     </SectionCard>
   );
 }
+
+const learnMethodHeaders: Record<LearnMethod, string> = {
+  "level-up": "LEVEL-UP",
+  machine: "TM",
+  egg: "EGG",
+  tutor: "MOVE TUTOR",
+};
 
 function MoveItem({ move }: { move: MoveFragment }) {
   const { name, type, category, power, accuracy, key } = move;
