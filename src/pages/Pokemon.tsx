@@ -7,6 +7,7 @@ import {
   Button,
   assertDefined,
   Icon,
+  Select,
 } from "@adamjanicki/ui";
 import { Tooltip } from "@adamjanicki/ui-extended";
 import { useParams } from "react-router";
@@ -21,6 +22,7 @@ import {
   type PokemonFragment,
   stats,
   types,
+  MoveFragment,
 } from "src/utils/types";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import TypeBadge from "src/components/TypeBadge";
@@ -28,6 +30,8 @@ import BigBadge from "src/components/BigBadge";
 import Link from "src/components/Link";
 import Header, { Subheader } from "src/components/Header";
 import SimpleTable from "src/components/SimpleTable";
+import useGetMoveset from "src/hooks/useGetMoveset";
+import generations, { Generation } from "src/data/generations";
 
 export default function Pokemon() {
   const params = useParams<{ slug: string }>();
@@ -35,6 +39,10 @@ export default function Pokemon() {
   const properName = dex[key as PokemonKey] as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
+  const moveResult = useGetMoveset({
+    key: key as PokemonKey,
+    skip: !properName,
+  });
 
   if (!properName) {
     return <NotFound />;
@@ -63,6 +71,7 @@ export default function Pokemon() {
             <NeighborLinks pokemon={pokemon} />
             <IntroInfo pokemon={pokemon} />
             <MainGrid pokemon={pokemon} />
+            <MovesSection {...moveResult} />
           </>
         )}
       </Box>
@@ -424,6 +433,97 @@ function FlavorSection({ pokemon }: { pokemon: Pokemon }) {
         </ui.em>
       </Box>
     </SectionCard>
+  );
+}
+
+function MovesSection({
+  loading,
+  error,
+  moves,
+}: ReturnType<typeof useGetMoveset>) {
+  const [generation, setGeneration] = useState<Generation>(7);
+
+  if (loading) {
+    return (
+      <SectionCard title="Movesets">
+        <Spinner />
+      </SectionCard>
+    );
+  }
+
+  if (error || !moves) {
+    return (
+      <SectionCard title="Movesets">
+        <Alert type="error">
+          {error || "There was an error loading movesets"}
+        </Alert>
+      </SectionCard>
+    );
+  }
+
+  const missingKeys: string[] = [];
+  const movesetForGeneration = (moves.get(generation) || []).filter((move) => {
+    const hasName = Boolean(move.name);
+    if (!hasName) missingKeys.push(move.key);
+    return hasName;
+  });
+  const generationOptions = generations.filter(
+    (key) => moves.get(key) && assertDefined(moves.get(key)).length > 0
+  );
+
+  return (
+    <SectionCard title="Movesets">
+      <Select
+        value={String(generation)}
+        options={generationOptions.map(String)}
+        onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
+        getOptionLabel={(value) => `Gen ${value}`}
+      />
+      {missingKeys.length > 0 && (
+        <Alert type="warning">
+          Missing the following keys: {missingKeys.join(", ")}
+        </Alert>
+      )}
+      {movesetForGeneration.length <= 0 ? (
+        <Alert type="warning">
+          No moves could be found in Gen {generation}.
+        </Alert>
+      ) : (
+        <Box vfx={{ axis: "y" }}>
+          {movesetForGeneration.map((move) => (
+            <MoveItem move={move} key={move.key} />
+          ))}
+        </Box>
+      )}
+    </SectionCard>
+  );
+}
+
+function MoveItem({ move }: { move: MoveFragment }) {
+  const { name, type, category, power, accuracy } = move;
+  let accuracyLabel: React.ReactNode = accuracy;
+  if (accuracy === true && category === "status") {
+    accuracyLabel = "—";
+  } else if (accuracy === true) {
+    accuracyLabel = "∞";
+  }
+
+  return (
+    <Box
+      vfx={{
+        axis: "x",
+        align: "center",
+        gap: "xs",
+        width: "full",
+        padding: "s",
+      }}
+    >
+      <ui.strong style={{ flex: 1 }}>{name}</ui.strong>
+      <TypeBadge type={type} />
+      <ui.span style={{ width: "15ch" }}>{category}</ui.span>
+      <ui.span style={{ width: "4ch" }}>{power}</ui.span>
+      <ui.span style={{ width: "4ch" }}>{accuracyLabel}</ui.span>
+    </Box>
   );
 }
 
