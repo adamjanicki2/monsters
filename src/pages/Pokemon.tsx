@@ -462,11 +462,7 @@ function MovesSection({
   }
 
   const missingKeys: string[] = [];
-  const movesetForGeneration = (moves.get(generation) || []).filter((move) => {
-    const hasName = Boolean(move.name);
-    if (!hasName) missingKeys.push(move.key);
-    return hasName;
-  });
+  const movesetForGeneration = moves.get(generation) || [];
   const generationOptions = generations.filter(
     (key) => moves.get(key) && assertDefined(moves.get(key)).length > 0
   );
@@ -521,7 +517,7 @@ function MoveItem({ move }: { move: MoveFragment }) {
       <ui.strong style={{ flex: 1 }}>{name}</ui.strong>
       <TypeBadge type={type} />
       <ui.span style={{ width: "15ch" }}>{category}</ui.span>
-      <ui.span style={{ width: "4ch" }}>{power}</ui.span>
+      <ui.span style={{ width: "4ch" }}>{power <= 0 ? "—" : power}</ui.span>
       <ui.span style={{ width: "4ch" }}>{accuracyLabel}</ui.span>
     </Box>
   );

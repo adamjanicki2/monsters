@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import pokemon, { baseEvolutions } from "src/data/pokemon";
 import { gameToGen, type Generation } from "src/data/generations";
 import moves, { MoveKey } from "src/data/moves";
+import { removeNonAlphanumeric } from "src/utils/helpers";
 
 type Config = {
   key: string;
@@ -76,14 +77,12 @@ export default function useGetMoveset({ key, skip }: Config): Result {
 }
 
 function formatName(key: string, name: string) {
-  if (name.includes(" ")) {
-    return name
-      .replace(" ", "-")
-      .replace(/[^a-z0-9-]/gi, "")
-      .toLowerCase();
-  }
+  const sanitized = name
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
 
-  return key;
+  return sanitized || key.toLowerCase();
 }
 
 async function fetchApi(key: string, name: string) {
@@ -94,18 +93,24 @@ async function fetchApi(key: string, name: string) {
   try {
     const data = await (await fetch(target)).json();
     data.moves.forEach((moveData: any) => {
-      const moveKey = moveData.move.name.replace("-", "") as MoveKey;
-      moveData.version_group_details.forEach((groupDetails: any) => {
-        const game = groupDetails.version_group.name;
-        const gen = gameToGen[game];
-        const hashKey = `${gen}${moveKey}`;
-        if (gen && !used.has(hashKey)) {
-          used.add(hashKey);
-          const movesForGen = map.get(gen) || [];
-          movesForGen.push({ ...moves[moveKey], key: moveKey });
-          map.set(gen, movesForGen);
-        }
-      });
+      const moveKey = removeNonAlphanumeric(
+        moveData.move.name
+      ).toLowerCase() as MoveKey;
+      const move = moves[moveKey];
+
+      if (move) {
+        moveData.version_group_details.forEach((groupDetails: any) => {
+          const game = groupDetails.version_group.name;
+          const gen = gameToGen[game];
+          const hashKey = `${gen}${moveKey}`;
+          if (gen && !used.has(hashKey)) {
+            used.add(hashKey);
+            const movesForGen = map.get(gen) || [];
+            movesForGen.push({ ...move, key: moveKey });
+            map.set(gen, movesForGen);
+          }
+        });
+      }
     });
   } catch (e) {
     throw e;

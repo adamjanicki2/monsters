@@ -162,6 +162,10 @@ export function formatKg(kg: number) {
   return `${(kg * 2.20462).toFixed(1)} lbs`;
 }
 
+export function removeNonAlphanumeric(value: string): string {
+  return value.replace(/[^a-z0-9]/gi, "");
+}
+
 export function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
