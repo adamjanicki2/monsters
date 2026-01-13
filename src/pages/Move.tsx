@@ -1,16 +1,22 @@
-import { Alert, Spinner, Box, ui, assertDefined } from "@adamjanicki/ui";
-import { useParams } from "react-router";
-import Page from "src/components/Page";
-import NotFound from "src/pages/NotFound";
-import moves, { type MoveKey } from "src/data/moves";
-import useGetMove from "src/hooks/useGetMove";
-import type { Move as MoveType } from "src/utils/types";
+import {
+  Alert,
+  assertDefined,
+  Box,
+  Spinner,
+  ui,
+  usePathParams,
+} from "@adamjanicki/ui";
 import Header, { Subheader } from "src/components/Header";
+import Page from "src/components/Page";
 import SimpleTable from "src/components/SimpleTable";
 import TypeBadge from "src/components/TypeBadge";
+import moves, { type MoveKey } from "src/data/moves";
+import useGetMove from "src/hooks/useGetMove";
+import NotFound from "src/pages/NotFound";
+import type { Move as MoveType } from "src/utils/types";
 
 export default function Move() {
-  const params = useParams<{ slug: string }>();
+  const params = usePathParams();
   const key = assertDefined(params.slug);
   const localMove = moves[key as MoveKey];
   const accuracy = localMove?.accuracy as true | number | undefined;

@@ -1,8 +1,17 @@
+import {
+  Alert,
+  Box,
+  Button,
+  Icon,
+  Link,
+  Select,
+  Spinner,
+  Tooltip,
+  ui,
+} from "@adamjanicki/ui";
+import { chevronDown, chevronUp } from "@adamjanicki/ui/icons";
 import React, { useMemo, useState } from "react";
-import { Alert, Spinner, Box, ui, Button, Select, Icon } from "@adamjanicki/ui";
-import { Tooltip } from "@adamjanicki/ui-extended";
 import BigBadge from "src/components/BigBadge";
-import Link from "src/components/Link";
 import Page from "src/components/Page";
 import TypeBadge from "src/components/TypeBadge";
 import useListPokemon from "src/hooks/useListPokemon";
@@ -79,7 +88,7 @@ export default function Dex() {
             vfx={{ width: "fit" }}
           >
             <Box vfx={{ axis: "x", align: "center", gap: "xs" }}>
-              <Icon icon={sortDir === "asc" ? "chevron-up" : "chevron-down"} />
+              <Icon icon={sortDir === "asc" ? chevronUp : chevronDown} />
               {sortDir === "asc" ? "Ascending" : "Descending"}
             </Box>
           </Button>
@@ -141,10 +150,15 @@ export default function Dex() {
                   ))}
                 </Box>
                 <Box vfx={{ axis: "x", align: "center", gap: "xs" }}>
-                  <Tooltip offset={4} tooltipContent={tooltipContent}>
-                    <BigBadge type={badgeType} vfx={{ italics: true }}>
-                      {String(effectiveBaseTotal)}
-                    </BigBadge>
+                  <Tooltip
+                    offset={4}
+                    anchor={
+                      <BigBadge type={badgeType} vfx={{ italics: true }}>
+                        {String(effectiveBaseTotal)}
+                      </BigBadge>
+                    }
+                  >
+                    {tooltipContent}
                   </Tooltip>
                   <ui.strong>{baseTotal}</ui.strong>
                 </Box>

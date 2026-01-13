@@ -1,14 +1,13 @@
-import { BrowserRouter, Route, Routes } from "react-router";
-import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
+import { Route, Router, Routes } from "@adamjanicki/ui";
+import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
 import { ApolloProvider } from "@apollo/client/react";
 import Footer from "src/components/Footer";
 import Nav from "src/components/Nav";
+import Dex from "src/pages/Dex";
 import Home from "src/pages/Home";
+import Move from "src/pages/Move";
 import NotFound from "src/pages/NotFound";
 import Pokemon from "src/pages/Pokemon";
-import Move from "src/pages/Move";
-import Dex from "src/pages/Dex";
-import ScrollTop from "src/components/ScrollTop";
 
 export const client = new ApolloClient({
   link: new HttpLink({
@@ -20,19 +19,16 @@ export const client = new ApolloClient({
 const App = () => {
   return (
     <ApolloProvider client={client}>
-      <BrowserRouter basename="/monsters">
-        <ScrollTop />
+      <Router basename="/monsters">
         <Nav />
-        <Routes>
+        <Routes fallback={<NotFound />}>
           <Route path="/" element={<Home />} />
           <Route path="/dex/:slug" element={<Pokemon />} />
           <Route path="/dex" element={<Dex />} />
           <Route path="/move/:slug" element={<Move />} />
-          {/* Make sure this is the last route */}
-          <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
-      </BrowserRouter>
+      </Router>
     </ApolloProvider>
   );
 };

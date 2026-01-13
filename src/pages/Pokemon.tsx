@@ -1,43 +1,45 @@
-import React, { useMemo, useState } from "react";
 import {
   Alert,
-  Spinner,
-  Box,
-  ui,
-  Button,
   assertDefined,
+  Box,
+  Button,
   Icon,
+  Link,
   Select,
+  Spinner,
+  Tooltip,
+  ui,
+  UnstyledLink,
+  usePathParams,
   useScrollToHash,
 } from "@adamjanicki/ui";
-import { Tooltip } from "@adamjanicki/ui-extended";
-import { useParams } from "react-router";
+import { chevronLeft, chevronRight } from "@adamjanicki/ui/icons";
+import React, { useMemo, useState } from "react";
+import BigBadge from "src/components/BigBadge";
+import Header, { CopyableSubheader, Subheader } from "src/components/Header";
 import Page from "src/components/Page";
+import SimpleTable from "src/components/SimpleTable";
+import TypeBadge from "src/components/TypeBadge";
+import generations, { Generation } from "src/data/generations";
+import dex, { PokemonKey, pokemonKeys } from "src/data/pokemon";
+import useGetMoveset from "src/hooks/useGetMoveset";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
-import dex, { PokemonKey, pokemonKeys } from "src/data/pokemon";
+import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import {
-  type Pokemon,
-  type Type,
-  type Stat,
-  type PokemonFragment,
-  stats,
-  types,
-  MoveFragment,
   LearnMethod,
   learnMethods,
+  MoveFragment,
+  type Pokemon,
+  type PokemonFragment,
+  type Stat,
+  stats,
+  type Type,
+  types,
 } from "src/utils/types";
-import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
-import TypeBadge from "src/components/TypeBadge";
-import BigBadge from "src/components/BigBadge";
-import Link, { UnstyledLink } from "src/components/Link";
-import Header, { CopyableSubheader, Subheader } from "src/components/Header";
-import SimpleTable from "src/components/SimpleTable";
-import useGetMoveset from "src/hooks/useGetMoveset";
-import generations, { Generation } from "src/data/generations";
 
 export default function Pokemon() {
-  const params = useParams<{ slug: string }>();
+  const params = usePathParams();
   const key = assertDefined(params.slug);
   const properName = dex[key as PokemonKey] as string | undefined;
 
@@ -116,9 +118,9 @@ function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
 
     return (
       <Link to={`/dex/${key}`} vfx={commonLinkVfx}>
-        {isPrev && <Icon icon="chevron-left" />}#
+        {isPrev && <Icon icon={chevronLeft} />}#
         {padDexNumber(neighborIndex + 1)} {dex[key]}
-        {!isPrev && <Icon icon="chevron-right" />}
+        {!isPrev && <Icon icon={chevronRight} />}
       </Link>
     );
   };
@@ -340,10 +342,15 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
       >
         <ui.strong vfx={{ color: "muted" }}>TOTAL</ui.strong>
         <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
-          <Tooltip offset={4} tooltipContent={tooltipContent}>
-            <BigBadge type={badgeType}>
-              {"EFFECTIVE " + pokemon.effectiveBaseTotal}
-            </BigBadge>
+          <Tooltip
+            offset={4}
+            anchor={
+              <BigBadge type={badgeType}>
+                {"EFFECTIVE " + pokemon.effectiveBaseTotal}
+              </BigBadge>
+            }
+          >
+            {tooltipContent}
           </Tooltip>
           <ui.strong>{pokemon.baseTotal}</ui.strong>
         </Box>
