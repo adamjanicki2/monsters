@@ -120,7 +120,9 @@ type Move = {
 type MoveFragment = Pick<
   Move,
   "key" | "name" | "accuracy" | "power" | "category" | "type"
->;
+> & {
+  method: LearnMethod;
+};
 
 export type {
   PokemonKey,

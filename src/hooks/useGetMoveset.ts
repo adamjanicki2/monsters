@@ -14,7 +14,7 @@ type Config = {
 type Result = {
   loading: boolean;
   error?: string;
-  moves: Map<Generation, Map<LearnMethod, MoveFragment[]>> | undefined;
+  moves: Map<Generation, MoveFragment[]> | undefined;
 };
 
 export default function useGetMoveset({ key, skip }: Config): Result {
@@ -42,22 +42,18 @@ export default function useGetMoveset({ key, skip }: Config): Result {
 
     const doApiCalls = async () => {
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
-      let moves = new Map<Generation, Map<LearnMethod, MoveFragment[]>>();
+      let moves = new Map<Generation, MoveFragment[]>();
 
       try {
         const baseMoves = await fetchApi(key, name);
-        moves = mergeMaps(moves, baseMoves, (m1, m2) =>
-          mergeMaps(m1, m2, mergeMoveFragments)
-        );
+        moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
 
         if (baseEvolution && baseEvolutionName) {
           const additionalMoves = await fetchApi(
             baseEvolution,
             baseEvolutionName
           );
-          moves = mergeMaps(moves, additionalMoves, (m1, m2) =>
-            mergeMaps(m1, m2, mergeMoveFragments)
-          );
+          moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
         }
       } catch (e) {
         return setState({
@@ -91,7 +87,7 @@ function formatName(key: string, name: string) {
 
 async function fetchApi(key: string, name: string) {
   const target = `https://pokeapi.co/api/v2/pokemon/${formatName(key, name)}/`;
-  const map = new Map<Generation, Map<LearnMethod, MoveFragment[]>>();
+  const map = new Map<Generation, MoveFragment[]>();
   const used = new Set<string>();
 
   try {
@@ -110,11 +106,8 @@ async function fetchApi(key: string, name: string) {
           const hashKey = `${gen}${moveKey}${method}`;
           if (gen && !used.has(hashKey)) {
             used.add(hashKey);
-            const movesForGen =
-              map.get(gen) || new Map<LearnMethod, MoveFragment[]>();
-            const movesForMethod = movesForGen.get(method) || [];
-            movesForMethod.push({ ...move, key: moveKey });
-            movesForGen.set(method, movesForMethod);
+            const movesForGen = map.get(gen) || [];
+            movesForGen.push({ ...move, key: moveKey, method });
             map.set(gen, movesForGen);
           }
         });
@@ -151,15 +144,17 @@ function mergeMoveFragments(m1: MoveFragment[], m2: MoveFragment[]) {
   const moves: MoveFragment[] = [];
   const used = new Set<string>();
   m1.forEach((move) => {
-    if (!used.has(move.key)) {
-      used.add(move.key);
+    const hashKey = `${move.key}${move.method}`;
+    if (!used.has(hashKey)) {
+      used.add(hashKey);
       moves.push(move);
     }
   });
 
   m2.forEach((move) => {
-    if (!used.has(move.key)) {
-      used.add(move.key);
+    const hashKey = `${move.key}${move.method}`;
+    if (!used.has(hashKey)) {
+      used.add(hashKey);
       moves.push(move);
     }
   });

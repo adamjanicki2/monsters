@@ -7,9 +7,9 @@ import {
   Link,
   Select,
   Spinner,
+  Table,
   Tooltip,
   ui,
-  UnstyledLink,
   usePathParams,
   useScrollToHash,
 } from "@adamjanicki/ui";
@@ -28,8 +28,6 @@ import NotFound from "src/pages/NotFound";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
 import {
   LearnMethod,
-  learnMethods,
-  MoveFragment,
   type Pokemon,
   type PokemonFragment,
   type Stat,
@@ -462,8 +460,7 @@ function MovesSection({
     );
   }
 
-  const movesetForGeneration =
-    moves.get(generation) || new Map<LearnMethod, MoveFragment[]>();
+  const movesetForGeneration = moves.get(generation) || [];
 
   return (
     <SectionCard title="Movesets">
@@ -473,31 +470,67 @@ function MovesSection({
         onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
         getOptionLabel={(value) => `GEN ${value}`}
       />
-      {movesetForGeneration.size <= 0 ? (
+      {movesetForGeneration.length <= 0 ? (
         <Alert type="warning">
           No moves could be found in Gen {generation}. This guy is most likely
           not in the game.
         </Alert>
       ) : (
-        <Box vfx={{ axis: "y", gap: "s" }}>
-          {learnMethods.map((learnMethod) => {
-            const moves = movesetForGeneration.get(learnMethod);
-            if (!moves) {
-              return null;
-            }
-
-            return (
-              <Box vfx={{ axis: "y" }} key={learnMethod}>
-                <ui.h3 vfx={{ fontWeight: 9, margin: "none", padding: "s" }}>
-                  {learnMethodHeaders[learnMethod]}
-                </ui.h3>
-                {moves.map((move) => (
-                  <MoveItem key={move.key} move={move} />
-                ))}
-              </Box>
-            );
-          })}
-        </Box>
+        <Table
+          vfx={{
+            backgroundColor: undefined,
+            border: undefined,
+            shadow: undefined,
+            width: "full",
+          }}
+          gutters
+          items={movesetForGeneration.map((move) => ({
+            ...move,
+            id: `${move.key}-${move.method}`,
+          }))}
+          columns={[
+            {
+              key: "name",
+              header: "Move",
+              render: (item) => <ui.strong>{item.name}</ui.strong>,
+            },
+            {
+              key: "method",
+              header: "Method",
+              render: (item) => learnMethodHeaders[item.method],
+              cellProps: { style: { width: "12ch" } },
+            },
+            {
+              key: "type",
+              header: "Type",
+              render: (item) => <TypeBadge type={item.type} />,
+              cellProps: { style: { width: "12ch" } },
+            },
+            {
+              key: "category",
+              header: "Category",
+              cellProps: { style: { width: "14ch" } },
+            },
+            {
+              key: "power",
+              header: "Power",
+              render: (item) => (item.power <= 0 ? "—" : item.power),
+              cellProps: { style: { width: "7ch" } },
+            },
+            {
+              key: "accuracy",
+              header: "Accuracy",
+              render: (item) => {
+                if (item.accuracy === true && item.category === "status")
+                  return "—";
+                if (item.accuracy === true) return "∞";
+                return item.accuracy;
+              },
+              cellProps: { style: { width: "9ch" } },
+            },
+          ]}
+          rowActions={(item) => ({ to: `/move/${item.key}` })}
+        />
       )}
     </SectionCard>
   );
@@ -509,37 +542,6 @@ const learnMethodHeaders: Record<LearnMethod, string> = {
   egg: "EGG",
   tutor: "MOVE TUTOR",
 };
-
-function MoveItem({ move }: { move: MoveFragment }) {
-  const { name, type, category, power, accuracy, key } = move;
-  let accuracyLabel: React.ReactNode = accuracy;
-  if (accuracy === true && category === "status") {
-    accuracyLabel = "—";
-  } else if (accuracy === true) {
-    accuracyLabel = "∞";
-  }
-
-  return (
-    <UnstyledLink
-      to={`/move/${key}`}
-      vfx={{
-        axis: "x",
-        align: "center",
-        gap: "xs",
-        width: "full",
-        padding: "s",
-        radius: "rounded",
-      }}
-      className="hover-background"
-    >
-      <ui.strong style={{ flex: 1 }}>{name}</ui.strong>
-      <TypeBadge type={type} />
-      <ui.span style={{ width: "15ch" }}>{category}</ui.span>
-      <ui.span style={{ width: "4ch" }}>{power <= 0 ? "—" : power}</ui.span>
-      <ui.span style={{ width: "4ch" }}>{accuracyLabel}</ui.span>
-    </UnstyledLink>
-  );
-}
 
 /* ---------------------------------- */
 /* Helpers                            */
