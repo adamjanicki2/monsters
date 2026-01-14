@@ -11,7 +11,6 @@ import { assertDefined, getDeviceType } from "@adamjanicki/ui/functions";
 import { chevronRight, search as searchIcon, x } from "@adamjanicki/ui/icons";
 import { FullOptions, Searcher } from "fast-fuzzy";
 import React, { useEffect, useRef, useState } from "react";
-import "src/components/search.css";
 import TypeBadge from "src/components/TypeBadge";
 import moves, { MoveKey, moveKeys } from "src/data/moves";
 import pokemon, { type PokemonKey, pokemonKeys } from "src/data/pokemon";
@@ -264,8 +263,8 @@ function Result({ result, onClick }: ResultRowProps) {
         padding: "s",
         radius: "rounded",
         color: "inherit",
+        hover: "shade",
       }}
-      className="hover-background"
     >
       {renderInnerContent(result)}
       <Icon icon={chevronRight} vfx={{ color: "muted" }} />

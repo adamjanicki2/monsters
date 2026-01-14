@@ -1,4 +1,4 @@
-import { Box, IconButton, Tooltip, ui } from "@adamjanicki/ui";
+import { Box, Icon, Tooltip, ui, UnstyledLink } from "@adamjanicki/ui";
 import { link } from "@adamjanicki/ui/icons";
 import { useRef, useState } from "react";
 import { idify } from "src/utils/helpers";
@@ -46,7 +46,15 @@ export function CopyableSubheader({ children }: Pick<Props, "children">) {
       <Subheader id={id}>{children}</Subheader>
       <Tooltip
         offset={4}
-        anchor={<IconButton icon={link} onClick={handleCopy} />}
+        anchor={
+          <UnstyledLink
+            to={`#${id}`}
+            onClick={handleCopy}
+            vfx={{ hover: "dim" }}
+          >
+            <Icon icon={link} />
+          </UnstyledLink>
+        }
       >
         {copied ? "Copied" : "Copy URL"}
       </Tooltip>
