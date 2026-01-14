@@ -1,7 +1,14 @@
+import {
+  Box,
+  TripleFade as Hamburger,
+  IconButton,
+  Link,
+  ui,
+  UnstyledLink,
+  useLocation,
+} from "@adamjanicki/ui";
+import { search } from "@adamjanicki/ui/icons";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router";
-import { Box, TripleFade as Hamburger, ui, IconButton } from "@adamjanicki/ui";
-import Link, { UnstyledLink } from "src/components/Link";
 import Search from "src/components/Search";
 import "src/components/nav.css";
 
@@ -65,7 +72,7 @@ export default function Nav() {
             className="mobile"
           >
             <IconButton
-              icon="search"
+              icon={search}
               color="muted"
               onClick={openSearch}
               size="m"
@@ -82,7 +89,7 @@ export default function Nav() {
           <Navlink to="/">Home</Navlink>
           <Navlink to="/dex">Dex</Navlink>
           <IconButton
-            icon="search"
+            icon={search}
             color="muted"
             className="desktop"
             onClick={openSearch}

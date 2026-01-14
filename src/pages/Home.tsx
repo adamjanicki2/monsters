@@ -1,5 +1,4 @@
-import { Box, ui } from "@adamjanicki/ui";
-import Link from "src/components/Link";
+import { Box, Link, ui } from "@adamjanicki/ui";
 import useDocumentTitle from "src/hooks/useDocumentTitle";
 
 export default function Home() {

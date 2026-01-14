@@ -1,43 +1,43 @@
-import React, { useMemo, useState } from "react";
 import {
   Alert,
-  Spinner,
-  Box,
-  ui,
-  Button,
   assertDefined,
+  Box,
+  Button,
   Icon,
+  Link,
   Select,
+  Spinner,
+  Table,
+  Tooltip,
+  ui,
+  usePathParams,
   useScrollToHash,
 } from "@adamjanicki/ui";
-import { Tooltip } from "@adamjanicki/ui-extended";
-import { useParams } from "react-router";
+import { chevronLeft, chevronRight } from "@adamjanicki/ui/icons";
+import React, { useMemo, useState } from "react";
+import BigBadge from "src/components/BigBadge";
+import Header, { CopyableSubheader, Subheader } from "src/components/Header";
 import Page from "src/components/Page";
+import SimpleTable from "src/components/SimpleTable";
+import TypeBadge from "src/components/TypeBadge";
+import generations, { Generation } from "src/data/generations";
+import dex, { PokemonKey, pokemonKeys } from "src/data/pokemon";
+import useGetMoveset from "src/hooks/useGetMoveset";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
-import dex, { PokemonKey, pokemonKeys } from "src/data/pokemon";
-import {
-  type Pokemon,
-  type Type,
-  type Stat,
-  type PokemonFragment,
-  stats,
-  types,
-  MoveFragment,
-  LearnMethod,
-  learnMethods,
-} from "src/utils/types";
 import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
-import TypeBadge from "src/components/TypeBadge";
-import BigBadge from "src/components/BigBadge";
-import Link, { UnstyledLink } from "src/components/Link";
-import Header, { CopyableSubheader, Subheader } from "src/components/Header";
-import SimpleTable from "src/components/SimpleTable";
-import useGetMoveset from "src/hooks/useGetMoveset";
-import generations, { Generation } from "src/data/generations";
+import {
+  LearnMethod,
+  type Pokemon,
+  type PokemonFragment,
+  type Stat,
+  stats,
+  type Type,
+  types,
+} from "src/utils/types";
 
 export default function Pokemon() {
-  const params = useParams<{ slug: string }>();
+  const params = usePathParams();
   const key = assertDefined(params.slug);
   const properName = dex[key as PokemonKey] as string | undefined;
 
@@ -116,9 +116,9 @@ function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
 
     return (
       <Link to={`/dex/${key}`} vfx={commonLinkVfx}>
-        {isPrev && <Icon icon="chevron-left" />}#
+        {isPrev && <Icon icon={chevronLeft} />}#
         {padDexNumber(neighborIndex + 1)} {dex[key]}
-        {!isPrev && <Icon icon="chevron-right" />}
+        {!isPrev && <Icon icon={chevronRight} />}
       </Link>
     );
   };
@@ -340,10 +340,15 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
       >
         <ui.strong vfx={{ color: "muted" }}>TOTAL</ui.strong>
         <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
-          <Tooltip offset={4} tooltipContent={tooltipContent}>
-            <BigBadge type={badgeType}>
-              {"EFFECTIVE " + pokemon.effectiveBaseTotal}
-            </BigBadge>
+          <Tooltip
+            offset={4}
+            anchor={
+              <BigBadge type={badgeType}>
+                {"EFFECTIVE " + pokemon.effectiveBaseTotal}
+              </BigBadge>
+            }
+          >
+            {tooltipContent}
           </Tooltip>
           <ui.strong>{pokemon.baseTotal}</ui.strong>
         </Box>
@@ -436,6 +441,29 @@ function MovesSection({
   moves,
 }: ReturnType<typeof useGetMoveset>) {
   const [generation, setGeneration] = useState<Generation>(7);
+  const [{ key: sortKey, direction: sortDirection }, setSort] = useState<{
+    key?: MoveSortKey;
+    direction: "none" | "asc" | "desc";
+  }>({ direction: "none" });
+  const movesetForGeneration = useMemo(
+    () => moves?.get(generation) || [],
+    [generation, moves]
+  );
+  const sortedMoves = useMemo(() => {
+    if (!sortKey || sortDirection === "none") return movesetForGeneration;
+    const directionMultiplier = sortDirection === "asc" ? 1 : -1;
+    return [...movesetForGeneration].sort(
+      (a, b) => compareValues(a[sortKey], b[sortKey]) * directionMultiplier
+    );
+  }, [movesetForGeneration, sortDirection, sortKey]);
+  const tableItems = useMemo(
+    () =>
+      sortedMoves.map((move) => ({
+        ...move,
+        id: `${move.key}-${move.method}`,
+      })),
+    [sortedMoves]
+  );
 
   if (loading) {
     return (
@@ -455,9 +483,6 @@ function MovesSection({
     );
   }
 
-  const movesetForGeneration =
-    moves.get(generation) || new Map<LearnMethod, MoveFragment[]>();
-
   return (
     <SectionCard title="Movesets">
       <Select
@@ -466,31 +491,72 @@ function MovesSection({
         onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
         getOptionLabel={(value) => `GEN ${value}`}
       />
-      {movesetForGeneration.size <= 0 ? (
+      {movesetForGeneration.length <= 0 ? (
         <Alert type="warning">
           No moves could be found in Gen {generation}. This guy is most likely
           not in the game.
         </Alert>
       ) : (
-        <Box vfx={{ axis: "y", gap: "s" }}>
-          {learnMethods.map((learnMethod) => {
-            const moves = movesetForGeneration.get(learnMethod);
-            if (!moves) {
-              return null;
-            }
-
-            return (
-              <Box vfx={{ axis: "y" }} key={learnMethod}>
-                <ui.h3 vfx={{ fontWeight: 9, margin: "none", padding: "s" }}>
-                  {learnMethodHeaders[learnMethod]}
-                </ui.h3>
-                {moves.map((move) => (
-                  <MoveItem key={move.key} move={move} />
-                ))}
-              </Box>
-            );
-          })}
-        </Box>
+        <Table
+          vfx={{ border: false, shadow: "none", width: "full" }}
+          gutters
+          items={tableItems}
+          columns={[
+            {
+              key: "name",
+              header: "Move",
+              render: (item) => <ui.strong>{item.name}</ui.strong>,
+              sortable: true,
+            },
+            {
+              key: "method",
+              header: "Method",
+              render: (item) => learnMethodHeaders[item.method],
+              cellProps: { style: { width: "12ch" } },
+              sortable: true,
+            },
+            {
+              key: "type",
+              header: "Type",
+              render: (item) => <TypeBadge type={item.type} />,
+              cellProps: { style: { width: "12ch" } },
+              sortable: true,
+            },
+            {
+              key: "category",
+              header: "Category",
+              cellProps: { style: { width: "14ch" } },
+              sortable: true,
+            },
+            {
+              key: "power",
+              header: "Power",
+              render: (item) => (item.power <= 0 ? "—" : item.power),
+              cellProps: { style: { width: "7ch" } },
+            },
+            {
+              key: "accuracy",
+              header: "Accuracy",
+              render: (item) => {
+                if (item.accuracy === true && item.category === "status")
+                  return "—";
+                if (item.accuracy === true) return "∞";
+                return item.accuracy;
+              },
+              cellProps: { style: { width: "9ch" } },
+            },
+          ]}
+          rowActions={(item) => ({ to: `/move/${item.key}` })}
+          sort={{
+            key: sortKey,
+            direction: sortDirection,
+            onSort: (key, direction) =>
+              setSort({
+                key: direction === "none" ? undefined : (key as MoveSortKey),
+                direction,
+              }),
+          }}
+        />
       )}
     </SectionCard>
   );
@@ -500,39 +566,21 @@ const learnMethodHeaders: Record<LearnMethod, string> = {
   "level-up": "LEVEL-UP",
   machine: "TM",
   egg: "EGG",
-  tutor: "MOVE TUTOR",
+  tutor: "TUTOR",
 };
 
-function MoveItem({ move }: { move: MoveFragment }) {
-  const { name, type, category, power, accuracy, key } = move;
-  let accuracyLabel: React.ReactNode = accuracy;
-  if (accuracy === true && category === "status") {
-    accuracyLabel = "—";
-  } else if (accuracy === true) {
-    accuracyLabel = "∞";
-  }
+type MoveSortKey = "name" | "method" | "type" | "category";
 
-  return (
-    <UnstyledLink
-      to={`/move/${key}`}
-      vfx={{
-        axis: "x",
-        align: "center",
-        gap: "xs",
-        width: "full",
-        padding: "s",
-        radius: "rounded",
-      }}
-      className="hover-background"
-    >
-      <ui.strong style={{ flex: 1 }}>{name}</ui.strong>
-      <TypeBadge type={type} />
-      <ui.span style={{ width: "15ch" }}>{category}</ui.span>
-      <ui.span style={{ width: "4ch" }}>{power <= 0 ? "—" : power}</ui.span>
-      <ui.span style={{ width: "4ch" }}>{accuracyLabel}</ui.span>
-    </UnstyledLink>
-  );
-}
+const compareValues = (a: unknown, b: unknown) => {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  return String(a).localeCompare(String(b), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+};
 
 /* ---------------------------------- */
 /* Helpers                            */

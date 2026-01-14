@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Funnel+Sans:ital,wght@0,300..800;1,300..800&display=swap");
 
 :root {
-  --ajui-link-color: #d10711;
+  --aui-link-color: #ee1111;
 }
 
 html {
@@ -10,7 +10,7 @@ html {
 
 body * {
   /* Handles scrolling to octothorpes */
-  scroll-margin-top: 80px;
+  scroll-margin-top: 88px;
 }
 
 body {

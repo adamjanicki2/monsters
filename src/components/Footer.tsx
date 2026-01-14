@@ -1,5 +1,4 @@
-import Link from "src/components/Link";
-import { ui } from "@adamjanicki/ui";
+import { Link, ui } from "@adamjanicki/ui";
 
 export default function Footer() {
   return (
@@ -14,7 +13,7 @@ export default function Footer() {
     >
       <ui.p vfx={{ fontWeight: 5 }}>
         Est. 2025 Built from scratch by{" "}
-        <Link external to="https://adamjanicki.xyz">
+        <Link newTab to="https://adamjanicki.xyz">
           Adam
         </Link>
       </ui.p>

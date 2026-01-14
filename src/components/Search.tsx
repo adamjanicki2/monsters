@@ -1,15 +1,21 @@
-import React from "react";
-import { Box, Icon, IconButton, IconInput, Layer, ui } from "@adamjanicki/ui";
+import {
+  Box,
+  Icon,
+  IconButton,
+  IconInput,
+  Layer,
+  ui,
+  UnstyledLink,
+} from "@adamjanicki/ui";
 import { assertDefined, getDeviceType } from "@adamjanicki/ui/functions";
+import { chevronRight, search as searchIcon, x } from "@adamjanicki/ui/icons";
 import { FullOptions, Searcher } from "fast-fuzzy";
-import { useEffect, useRef, useState } from "react";
-import { UnstyledLink } from "src/components/Link";
-import { makeIconSprite, partition } from "src/utils/helpers";
-import pokemon, { type PokemonKey, pokemonKeys } from "src/data/pokemon";
-import "src/components/search.css";
-import type { Category, Type } from "src/utils/types";
-import moves, { MoveKey, moveKeys } from "src/data/moves";
+import React, { useEffect, useRef, useState } from "react";
 import TypeBadge from "src/components/TypeBadge";
+import moves, { MoveKey, moveKeys } from "src/data/moves";
+import pokemon, { type PokemonKey, pokemonKeys } from "src/data/pokemon";
+import { makeIconSprite, partition } from "src/utils/helpers";
+import type { Category, Type } from "src/utils/types";
 
 type PokemonResult = {
   readonly type: "dex";
@@ -97,7 +103,7 @@ const vfxCenterMessage = {
 function Empty({ query }: { query: string }) {
   return (
     <Box vfx={vfxCenterMessage}>
-      <Icon icon="search" size="l" />
+      <Icon icon={searchIcon} size="l" />
       <ui.span>No results found for ‘{query}’</ui.span>
     </Box>
   );
@@ -153,7 +159,7 @@ export default function Search({ open, onClose }: Props) {
         <Box vfx={{ axis: "y", gap: "s", padding: "m", borderBottom: true }}>
           <Box vfx={{ axis: "x", align: "center", justify: "between" }}>
             <ui.strong vfx={{ fontSize: "m" }}>Search</ui.strong>
-            <IconButton onClick={handleClose} icon="x" />
+            <IconButton onClick={handleClose} icon={x} />
           </Box>
 
           <IconInput
@@ -169,17 +175,17 @@ export default function Search({ open, onClose }: Props) {
             startIcon={
               <Icon
                 vfx={{ color: "muted", marginLeft: "m" }}
-                icon="search"
+                icon={searchIcon}
                 size="m"
               />
             }
           />
         </Box>
 
-        <Box vfx={{ height: "full", overflowY: "scroll" }}>
+        <Box vfx={{ height: "full", overflowY: "auto" }}>
           {normalizedQuery.length === 0 ? (
             <Box vfx={vfxCenterMessage}>
-              <Icon icon="search" size="l" />
+              <Icon icon={searchIcon} size="l" />
               <ui.span>Search for a Pokémon name.</ui.span>
             </Box>
           ) : (
@@ -257,11 +263,11 @@ function Result({ result, onClick }: ResultRowProps) {
         padding: "s",
         radius: "rounded",
         color: "inherit",
+        hover: "shade",
       }}
-      className="hover-background"
     >
       {renderInnerContent(result)}
-      <Icon icon="chevron-right" vfx={{ color: "muted" }} />
+      <Icon icon={chevronRight} vfx={{ color: "muted" }} />
     </UnstyledLink>
   );
 }
