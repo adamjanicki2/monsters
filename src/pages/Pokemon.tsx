@@ -566,7 +566,7 @@ const learnMethodHeaders: Record<LearnMethod, string> = {
   "level-up": "LEVEL-UP",
   machine: "TM",
   egg: "EGG",
-  tutor: "MOVE TUTOR",
+  tutor: "TUTOR",
 };
 
 type MoveSortKey = "name" | "method" | "type" | "category";
