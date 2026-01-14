@@ -441,6 +441,29 @@ function MovesSection({
   moves,
 }: ReturnType<typeof useGetMoveset>) {
   const [generation, setGeneration] = useState<Generation>(7);
+  const [{ key: sortKey, direction: sortDirection }, setSort] = useState<{
+    key?: MoveSortKey;
+    direction: "none" | "asc" | "desc";
+  }>({ direction: "none" });
+  const movesetForGeneration = useMemo(
+    () => moves?.get(generation) || [],
+    [generation, moves]
+  );
+  const sortedMoves = useMemo(() => {
+    if (!sortKey || sortDirection === "none") return movesetForGeneration;
+    const directionMultiplier = sortDirection === "asc" ? 1 : -1;
+    return [...movesetForGeneration].sort(
+      (a, b) => compareValues(a[sortKey], b[sortKey]) * directionMultiplier
+    );
+  }, [movesetForGeneration, sortDirection, sortKey]);
+  const tableItems = useMemo(
+    () =>
+      sortedMoves.map((move) => ({
+        ...move,
+        id: `${move.key}-${move.method}`,
+      })),
+    [sortedMoves]
+  );
 
   if (loading) {
     return (
@@ -460,8 +483,6 @@ function MovesSection({
     );
   }
 
-  const movesetForGeneration = moves.get(generation) || [];
-
   return (
     <SectionCard title="Movesets">
       <Select
@@ -477,39 +498,35 @@ function MovesSection({
         </Alert>
       ) : (
         <Table
-          vfx={{
-            backgroundColor: undefined,
-            border: undefined,
-            shadow: undefined,
-            width: "full",
-          }}
+          vfx={{ border: false, shadow: "none", width: "full" }}
           gutters
-          items={movesetForGeneration.map((move) => ({
-            ...move,
-            id: `${move.key}-${move.method}`,
-          }))}
+          items={tableItems}
           columns={[
             {
               key: "name",
               header: "Move",
               render: (item) => <ui.strong>{item.name}</ui.strong>,
+              sortable: true,
             },
             {
               key: "method",
               header: "Method",
               render: (item) => learnMethodHeaders[item.method],
               cellProps: { style: { width: "12ch" } },
+              sortable: true,
             },
             {
               key: "type",
               header: "Type",
               render: (item) => <TypeBadge type={item.type} />,
               cellProps: { style: { width: "12ch" } },
+              sortable: true,
             },
             {
               key: "category",
               header: "Category",
               cellProps: { style: { width: "14ch" } },
+              sortable: true,
             },
             {
               key: "power",
@@ -530,6 +547,15 @@ function MovesSection({
             },
           ]}
           rowActions={(item) => ({ to: `/move/${item.key}` })}
+          sort={{
+            key: sortKey,
+            direction: sortDirection,
+            onSort: (key, direction) =>
+              setSort({
+                key: direction === "none" ? undefined : (key as MoveSortKey),
+                direction,
+              }),
+          }}
         />
       )}
     </SectionCard>
@@ -541,6 +567,19 @@ const learnMethodHeaders: Record<LearnMethod, string> = {
   machine: "TM",
   egg: "EGG",
   tutor: "MOVE TUTOR",
+};
+
+type MoveSortKey = "name" | "method" | "type" | "category";
+
+const compareValues = (a: unknown, b: unknown) => {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  return String(a).localeCompare(String(b), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
 };
 
 /* ---------------------------------- */
