@@ -16,7 +16,19 @@ const icons = {
     "M14.68,1.32c-.21-.15-.48-.21-.74-.16-1.89.36-3.86,0-5.44-1.02-.3-.19-.7-.19-1,0-1.58,1.01-3.55,1.38-5.44,1.02-.26-.05-.53,0-.74.16-.21.15-.32.38-.32.62v5.96c0,2.33,1.23,4.51,3.3,5.87l3.19,2.08c.3.2.71.2,1.02,0l3.19-2.08c2.07-1.35,3.3-3.54,3.3-5.87V1.94c0-.24-.12-.47-.32-.62ZM13.25,7.91c0,1.81-.95,3.51-2.56,4.56l-2.69,1.75V1.75c1.58.87,3.42,1.26,5.25,1.11v5.04Z" as IconType,
 } as const;
 
-export default function CategoryIcon({ category, ...props }: Props) {
+const colors = {
+  special: "#ee1111",
+  physical: "#cc8844",
+  status: "#707070",
+} as const;
+
+export default function CategoryIcon({ category, style, ...props }: Props) {
   const icon = icons[category];
-  return <Icon icon={icon} {...props} />;
+  return (
+    <Icon
+      {...props}
+      icon={icon}
+      style={{ ...style, color: colors[category] }}
+    />
+  );
 }
