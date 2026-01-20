@@ -16,6 +16,7 @@ import {
 import { chevronLeft, chevronRight } from "@adamjanicki/ui/icons";
 import React, { useMemo, useState } from "react";
 import BigBadge from "src/components/BigBadge";
+import CategoryIcon from "src/components/CategoryIcon";
 import Header, { CopyableSubheader, Subheader } from "src/components/Header";
 import Page from "src/components/Page";
 import SimpleTable from "src/components/SimpleTable";
@@ -286,7 +287,7 @@ function AbilityRow({
 
 function StatsSection({ pokemon }: { pokemon: Pokemon }) {
   let maxStat = Math.max(
-    ...Object.values(pokemon.baseStats).filter((num) => !isNaN(num))
+    ...Object.values(pokemon.baseStats).filter((num) => !isNaN(num)),
   );
 
   maxStat = clamp(maxStat, 150, 255);
@@ -384,7 +385,7 @@ export function getEffectiveBadgeInfo(pokemon: Pokemon | PokemonFragment) {
 function TypeEffectivenessSection({ pokemon }: { pokemon: Pokemon }) {
   const table = useMemo(
     () => computeEffectivenessTable(pokemon.weaknesses),
-    [pokemon.weaknesses]
+    [pokemon.weaknesses],
   );
 
   return (
@@ -447,13 +448,13 @@ function MovesSection({
   }>({ direction: "none" });
   const movesetForGeneration = useMemo(
     () => moves?.get(generation) || [],
-    [generation, moves]
+    [generation, moves],
   );
   const sortedMoves = useMemo(() => {
     if (!sortKey || sortDirection === "none") return movesetForGeneration;
     const directionMultiplier = sortDirection === "asc" ? 1 : -1;
     return [...movesetForGeneration].sort(
-      (a, b) => compareValues(a[sortKey], b[sortKey]) * directionMultiplier
+      (a, b) => compareValues(a[sortKey], b[sortKey]) * directionMultiplier,
     );
   }, [movesetForGeneration, sortDirection, sortKey]);
   const tableItems = useMemo(
@@ -462,7 +463,7 @@ function MovesSection({
         ...move,
         id: `${move.key}-${move.method}`,
       })),
-    [sortedMoves]
+    [sortedMoves],
   );
 
   if (loading) {
@@ -512,27 +513,26 @@ function MovesSection({
               key: "method",
               header: "Method",
               render: (item) => learnMethodHeaders[item.method],
-              cellProps: { style: { width: "12ch" } },
               sortable: true,
             },
             {
               key: "type",
               header: "Type",
               render: (item) => <TypeBadge type={item.type} />,
-              cellProps: { style: { width: "12ch" } },
               sortable: true,
             },
             {
               key: "category",
-              header: "Category",
-              cellProps: { style: { width: "14ch" } },
+              header: "Cat",
+              render: ({ category }) => (
+                <CategoryIcon size="l" category={category} />
+              ),
               sortable: true,
             },
             {
               key: "power",
               header: "Power",
               render: (item) => (item.power <= 0 ? "—" : item.power),
-              cellProps: { style: { width: "7ch" } },
             },
             {
               key: "accuracy",
@@ -543,7 +543,6 @@ function MovesSection({
                 if (item.accuracy === true) return "∞";
                 return item.accuracy;
               },
-              cellProps: { style: { width: "9ch" } },
             },
           ]}
           rowActions={(item) => ({ to: `/move/${item.key}` })}
@@ -629,7 +628,7 @@ const MULT_LABEL: Record<Multiplier, [string, string]> = {
 };
 
 function computeEffectivenessTable(
-  weaknesses: Pokemon["weaknesses"]
+  weaknesses: Pokemon["weaknesses"],
 ): Record<Type, Multiplier> {
   const table = Object.fromEntries(types.map((t) => [t, 1])) as Record<
     Type,

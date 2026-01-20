@@ -6,6 +6,7 @@ import {
   ui,
   usePathParams,
 } from "@adamjanicki/ui";
+import CategoryIcon from "src/components/CategoryIcon";
 import Header, { Subheader } from "src/components/Header";
 import Page from "src/components/Page";
 import SimpleTable from "src/components/SimpleTable";
@@ -75,8 +76,12 @@ function MoveInfo({ move }: { move: MoveType }) {
           ["Type", <TypeBadge type={move.type} />],
           [
             "Category",
-            <ui.span style={{ textTransform: "capitalize" }}>
+            <ui.span
+              vfx={{ axis: "x", align: "center", gap: "s" }}
+              style={{ textTransform: "capitalize" }}
+            >
               {move.category}
+              <CategoryIcon category={move.category} />
             </ui.span>,
           ],
           ["Accuracy", move.accuracy === true ? "∞" : move.accuracy],
