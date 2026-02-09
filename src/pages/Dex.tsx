@@ -77,7 +77,7 @@ export default function Dex() {
           <Select
             aria-label="sort"
             value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as DexSortKey)}
+            onSelect={setSortKey}
             options={[...dexSortKeys]}
             getOptionLabel={(sortKey) => sortLabels[sortKey as DexSortKey]}
           />

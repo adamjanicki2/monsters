@@ -1,57 +1,68 @@
-import useQuery from "src/hooks/useQuery";
-import { Category, Move, Type } from "src/utils/types";
-import { MoveKey } from "src/data/moves";
+import { useState, useEffect } from "react";
+import { pokeapi } from "src/api/pokeapi";
+import type { Move } from "src/utils/types";
 
 type Config = {
   key: string;
-  accuracy: number | true | undefined;
+  accuracy: boolean | number | undefined;
 };
 
-export default function useGetMove({ key, accuracy }: Config) {
-  const query = `
-{
-  getMove(move: ${key}) {
-    accuracy
-    basePower
-    category
-    desc
-    key
-    name
-    pp
-    priority
-    shortDesc
-    target
-    type
-    zMovePower
-  }
+function formatMoveName(key: string): string {
+  return key
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
-`;
 
-  const skip = accuracy === undefined;
-  const { data, loading, error } = useQuery<"getMove">({ query, skip });
+export default function useGetMove({ key, accuracy }: Config) {
+  const [move, setMove] = useState<Move | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>();
 
-  let move: Move | undefined;
-  const gqlMove = data?.getMove;
+  const skip = typeof accuracy === "number" || accuracy === undefined;
 
-  if (gqlMove && accuracy !== undefined) {
-    move = {
-      key: key as MoveKey,
-      accuracy,
-      power: Number(gqlMove.basePower),
-      name: gqlMove.name,
-      type: gqlMove.type.toLowerCase() as Type,
-      category: gqlMove.category.toLowerCase() as Category,
-      pp: gqlMove.pp,
-      desc: gqlMove.desc || gqlMove.shortDesc,
-      priority: gqlMove.priority,
-      zPower: gqlMove.zMovePower,
-      target: gqlMove.target,
+  useEffect(() => {
+    if (skip) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchMove = async () => {
+      try {
+        setLoading(true);
+
+        const moveData = await pokeapi.getMove(key);
+
+        const effectEntry = moveData.effect_entries.find(
+          (e) => e.language.name === "en"
+        );
+
+        const transformed: Move = {
+          key: key as any,
+          name: formatMoveName(key),
+          type: moveData.type.name as any,
+          category: moveData.damage_class.name as any,
+          accuracy: moveData.accuracy === null ? true : moveData.accuracy,
+          power: moveData.power || 0,
+          pp: moveData.pp,
+          priority: moveData.priority,
+          zPower: 0, // PokeAPI doesn't provide this easily
+          target: moveData.target.name,
+          desc: effectEntry?.effect || effectEntry?.short_effect || "",
+        };
+
+        setMove(transformed);
+        setError(undefined);
+      } catch (e) {
+        setError(`Failed to fetch move: ${(e as Error).message}`);
+        setMove(undefined);
+      } finally {
+        setLoading(false);
+      }
     };
-  }
 
-  return {
-    move,
-    loading,
-    error,
-  };
+    fetchMove();
+  }, [key, skip]);
+
+  return { move, loading, error };
 }

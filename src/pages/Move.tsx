@@ -1,11 +1,4 @@
-import {
-  Alert,
-  assertDefined,
-  Box,
-  Spinner,
-  ui,
-  usePathParams,
-} from "@adamjanicki/ui";
+import { Alert, Box, Spinner, ui, usePathParams } from "@adamjanicki/ui";
 import CategoryIcon from "src/components/CategoryIcon";
 import Header, { Subheader } from "src/components/Header";
 import Page from "src/components/Page";
@@ -18,7 +11,7 @@ import type { Move as MoveType } from "src/utils/types";
 
 export default function Move() {
   const params = usePathParams();
-  const key = assertDefined(params.slug);
+  const key = params.slug as string;
   const localMove = moves[key as MoveKey];
   const accuracy = localMove?.accuracy as true | number | undefined;
   const { move, loading, error } = useGetMove({ key, accuracy });

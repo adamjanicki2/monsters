@@ -1,104 +1,53 @@
-import useQuery from "src/hooks/useQuery";
-import type { Pokemon as GQLPokemon } from "@favware/graphql-pokemon";
-import { convertToPokemonStruct } from "src/utils/helpers";
+import { useState, useEffect } from "react";
+import { pokeapi } from "src/api/pokeapi";
+import { convertPokeAPIToPokemon } from "src/utils/helpers";
+import type { Pokemon, PokemonKey } from "src/utils/types";
 
 type Config = {
   key: string;
-  properName: string | undefined;
+  properName?: string;
 };
 
 export default function useGetPokemon({ key, properName }: Config) {
-  // reverse texts to get the original generation description
-  const query = `
-{
-  getPokemon(pokemon: ${key}, reverseFlavorTexts: false) {
-    key
-    abilities {
-      first {
-        key
-        name
-        shortDesc
-      }
-      hidden {
-        key
-        name
-        shortDesc
-      }
-      second {
-        key
-        name
-        shortDesc
-      }
-    }
-    baseStats {
-      attack
-      defense
-      hp
-      specialattack
-      specialdefense
-      speed
-    }
-    baseStatsTotal
-    catchRate {
-      base
-      percentageWithOrdinaryPokeballAtFullHealth
-    }
-    classification
-    evYields {
-      attack
-      defense
-      hp
-      specialattack
-      specialdefense
-      speed
-    }
-    flavorTexts {
-      flavor
-      game
-    }
-    gender {
-      female
-      male
-    }
-    height
-    num
-    otherFormes
-    species
-    types {
-      name
-      matchup {
-        defending {
-          doubleEffectiveTypes
-          doubleResistedTypes
-          effectiveTypes
-          effectlessTypes
-          normalTypes
-          resistedTypes
-        }
-      }
-    }
-    weight
-    mythical
-    legendary
-  }
-}
-`;
+  const [pokemon, setPokemon] = useState<Pokemon | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>();
 
-  const { data, loading, error } = useQuery<"getPokemon">({
-    query,
-    skip: !properName,
-  });
+  useEffect(() => {
+    if (!properName) {
+      setLoading(false);
+      return;
+    }
 
-  const rawPokemon = data?.getPokemon as GQLPokemon | undefined;
+    const fetchPokemon = async () => {
+      try {
+        setLoading(true);
 
-  const pokemon =
-    rawPokemon && properName
-      ? convertToPokemonStruct(rawPokemon, properName)
-      : undefined;
+        // Fetch both pokemon and species data in parallel
+        const [pokemonData, speciesData] = await Promise.all([
+          pokeapi.getPokemon(key),
+          pokeapi.getPokemonSpecies(key),
+        ]);
 
-  return {
-    pokemon,
-    loading,
-    error,
-  };
+        const transformed = await convertPokeAPIToPokemon(
+          pokemonData,
+          speciesData,
+          properName,
+          key as PokemonKey
+        );
+
+        setPokemon(transformed);
+        setError(undefined);
+      } catch (e) {
+        setError(`Failed to fetch Pokemon: ${(e as Error).message}`);
+        setPokemon(undefined);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPokemon();
+  }, [key, properName]);
+
+  return { pokemon, loading, error };
 }

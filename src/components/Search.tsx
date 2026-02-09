@@ -7,7 +7,7 @@ import {
   ui,
   UnstyledLink,
 } from "@adamjanicki/ui";
-import { assertDefined, getDeviceType } from "@adamjanicki/ui/functions";
+import { getDeviceType } from "@adamjanicki/ui/functions";
 import { chevronRight, search as searchIcon, x } from "@adamjanicki/ui/icons";
 import { FullOptions, Searcher } from "fast-fuzzy";
 import React, { useEffect, useRef, useState } from "react";
@@ -192,7 +192,7 @@ export default function Search({ open, onClose }: Props) {
             <Box vfx={{ axis: "y", padding: "s" }}>
               {showEmpty && <Empty query={normalizedQuery} />}
               {keys.map((key) => {
-                const items = assertDefined(results.get(key));
+                const items = results.get(key)!;
                 return (
                   <React.Fragment key={key}>
                     <ui.h3

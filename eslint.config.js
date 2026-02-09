@@ -17,6 +17,7 @@ export default eslint.config(
       "react/react-in-jsx-scope": "off",
       "no-console": "warn",
       "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
     },
   }
 );

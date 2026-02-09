@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { gameToGen, type Generation } from "src/data/generations";
 import moves, { MoveKey } from "src/data/moves";
@@ -51,7 +50,7 @@ export default function useGetMoveset({ key, skip }: Config): Result {
         if (baseEvolution && baseEvolutionName) {
           const additionalMoves = await fetchApi(
             baseEvolution,
-            baseEvolutionName
+            baseEvolutionName,
           );
           moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
         }
@@ -95,7 +94,7 @@ async function fetchApi(key: string, name: string) {
     const data = await (await fetch(target)).json();
     data.moves.forEach((moveData: any) => {
       const moveKey = removeNonAlphanumeric(
-        moveData.move.name
+        moveData.move.name,
       ).toLowerCase() as MoveKey;
       const move = moves[moveKey];
 
@@ -124,7 +123,7 @@ async function fetchApi(key: string, name: string) {
 function mergeMaps<K, V>(
   map1: Map<K, V>,
   map2: Map<K, V>,
-  combiner: (v1: V, v2: V) => V
+  combiner: (v1: V, v2: V) => V,
 ): Map<K, V> {
   const map = new Map<K, V>();
 

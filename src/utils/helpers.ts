@@ -1,9 +1,17 @@
 import type {
-  Pokemon as GQLPokemon,
-  PokemonType as GQLPokemonType,
-} from "@favware/graphql-pokemon";
-import type { AttackerType, Pokemon, PokemonKey, Type } from "src/utils/types";
+  AttackerType,
+  Pokemon,
+  PokemonKey,
+  Type,
+  Stat,
+} from "src/utils/types";
 import { types as allTypes } from "src/utils/types";
+import { typeChart } from "src/data/typeChart";
+import {
+  pokeapi,
+  type PokeAPIPokemon,
+  type PokeAPISpecies,
+} from "src/api/pokeapi";
 
 const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites";
 
@@ -14,70 +22,56 @@ function constructSprites(key: PokemonKey): [string, string] {
   ];
 }
 
-function computeWeaknesses(
-  types: readonly GQLPokemonType[]
+export function computeWeaknessesFromTypes(
+  types: Type[],
 ): Pokemon["weaknesses"] {
-  const [type1, type2] = types;
+  const multipliers = new Map<Type, number>();
 
-  if (!type2) {
-    return {
-      quad: [],
-      double: type1.matchup.defending.effectiveTypes as Type[],
-      normal: type1.matchup.defending.normalTypes as Type[],
-      half: type1.matchup.defending.resistedTypes as Type[],
-      quarter: [],
-      none: type1.matchup.defending.effectlessTypes as Type[],
-    };
+  // Initialize all types to 1x
+  allTypes.forEach((type) => multipliers.set(type, 1));
+
+  // Apply type 1 matchups
+  const matchup1 = typeChart[types[0]];
+  matchup1.doubleDamageFrom.forEach((t) => multipliers.set(t, 2));
+  matchup1.halfDamageFrom.forEach((t) => multipliers.set(t, 0.5));
+  matchup1.noDamageFrom.forEach((t) => multipliers.set(t, 0));
+
+  // Apply type 2 matchups (multiply)
+  if (types[1]) {
+    const matchup2 = typeChart[types[1]];
+    matchup2.doubleDamageFrom.forEach((t) =>
+      multipliers.set(t, multipliers.get(t)! * 2),
+    );
+    matchup2.halfDamageFrom.forEach((t) =>
+      multipliers.set(t, multipliers.get(t)! * 0.5),
+    );
+    matchup2.noDamageFrom.forEach((t) => multipliers.set(t, 0));
   }
 
-  const buildMultiplierMap = (type: GQLPokemonType): Record<Type, number> => {
-    const map: Partial<Record<Type, number>> = {};
+  // Group by multiplier value
+  const quad: Type[] = [];
+  const double: Type[] = [];
+  const normal: Type[] = [];
+  const half: Type[] = [];
+  const quarter: Type[] = [];
+  const none: Type[] = [];
 
-    for (const t of type.matchup.defending.effectiveTypes as Type[]) {
-      map[t] = 2;
-    }
-    for (const t of type.matchup.defending.normalTypes as Type[]) {
-      map[t] = 1;
-    }
-    for (const t of type.matchup.defending.resistedTypes as Type[]) {
-      map[t] = 0.5;
-    }
-    for (const t of type.matchup.defending.effectlessTypes as Type[]) {
-      map[t] = 0;
-    }
+  multipliers.forEach((mult, type) => {
+    if (mult === 4) quad.push(type);
+    else if (mult === 2) double.push(type);
+    else if (mult === 1) normal.push(type);
+    else if (mult === 0.5) half.push(type);
+    else if (mult === 0.25) quarter.push(type);
+    else if (mult === 0) none.push(type);
+  });
 
-    return map as Record<Type, number>;
-  };
-
-  const map1 = buildMultiplierMap(type1);
-  const map2 = buildMultiplierMap(type2);
-
-  const weaknesses: Record<keyof Pokemon["weaknesses"], Type[]> = {
-    quad: [],
-    double: [],
-    normal: [],
-    half: [],
-    quarter: [],
-    none: [],
-  };
-
-  for (const attackingType of allTypes) {
-    const m1 = map1[attackingType] ?? 1;
-    const m2 = map2[attackingType] ?? 1;
-    const multiplier = m1 * m2;
-
-    if (multiplier === 4) weaknesses.quad.push(attackingType);
-    else if (multiplier === 2) weaknesses.double.push(attackingType);
-    else if (multiplier === 1) weaknesses.normal.push(attackingType);
-    else if (multiplier === 0.5) weaknesses.half.push(attackingType);
-    else if (multiplier === 0.25) weaknesses.quarter.push(attackingType);
-    else if (multiplier === 0) weaknesses.none.push(attackingType);
-  }
-
-  return weaknesses;
+  return { quad, double, normal, half, quarter, none };
 }
 
-export function computeAttackingInfo(pokemon: GQLPokemon) {
+export function computeAttackingInfo(pokemon: {
+  baseStats: Record<Stat, number>;
+  baseStatsTotal: number;
+}) {
   const { baseStats, baseStatsTotal } = pokemon;
   const { attack, specialattack } = baseStats;
   let attackerType: AttackerType = "special";
@@ -93,59 +87,6 @@ export function computeAttackingInfo(pokemon: GQLPokemon) {
   return {
     attackerType,
     effectiveBaseTotal,
-  };
-}
-
-export function convertToPokemonStruct(
-  pokemon: GQLPokemon,
-  name: string
-): Pokemon {
-  const { baseStats, baseStatsTotal } = pokemon;
-  const { attackerType, effectiveBaseTotal } = computeAttackingInfo(pokemon);
-  const key = pokemon.key.valueOf() as PokemonKey;
-  const [sprite, shinySprite] = constructSprites(key);
-
-  const ungendered =
-    pokemon.gender.female === pokemon.gender.male &&
-    pokemon.gender.male === "0%";
-
-  return {
-    key,
-    name,
-    desc: pokemon.classification || "No description exists.",
-    abilities: {
-      first: pokemon.abilities.first,
-      second: pokemon.abilities.second,
-      hidden: pokemon.abilities.hidden,
-    },
-    attackerType,
-    baseStats,
-    baseTotal: baseStatsTotal,
-    effectiveBaseTotal,
-    evolutionLevel: pokemon.evolutionLevel,
-    evYields: pokemon.evYields,
-    flavorText: pokemon.flavorTexts[0],
-    gender: ungendered ? null : pokemon.gender,
-    height: pokemon.height,
-    weight: pokemon.weight,
-    dexNumber: pokemon.num,
-    variants: (pokemon.otherFormes || []) as PokemonKey[],
-    sprite,
-    shinySprite,
-    weaknesses: computeWeaknesses(pokemon.types),
-    rarity: pokemon.mythical
-      ? "mythical"
-      : pokemon.legendary
-      ? "legendary"
-      : null,
-    type: [
-      pokemon.types[0].name.toLowerCase(),
-      pokemon.types[1]?.name?.toLowerCase(),
-    ].filter(Boolean) as unknown as Pokemon["type"],
-    catchRate: [
-      pokemon.catchRate!.base,
-      pokemon.catchRate!.percentageWithOrdinaryPokeballAtFullHealth,
-    ],
   };
 }
 
@@ -189,7 +130,7 @@ export const makeIconSprite = (key: string) =>
 
 export function partition<K extends string, T extends object>(
   arr: T[],
-  partitionKey: (item: T) => K
+  partitionKey: (item: T) => K,
 ): Map<K, T[]> {
   const map = new Map<K, T[]>();
   arr.forEach((item) => {
@@ -200,4 +141,158 @@ export function partition<K extends string, T extends object>(
   });
 
   return map;
+}
+
+function formatAbilityName(key: string): string {
+  return key
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function calculateCatchRatePercentage(captureRate: number): string {
+  // Formula: (captureRate / 255) * 100 at full HP with Pokeball
+  const percentage = (captureRate / 255) * 100;
+  return `${percentage.toFixed(1)}%`;
+}
+
+function convertAbility(
+  abilitySlot: any,
+  abilityData: any,
+): Pokemon["abilities"]["first"] | null {
+  if (!abilitySlot || !abilityData) return null;
+
+  const effectEntry = abilityData.effect_entries.find(
+    (e: any) => e.language.name === "en",
+  );
+
+  return {
+    key: abilitySlot.ability.name,
+    name: formatAbilityName(abilitySlot.ability.name),
+    shortDesc: effectEntry?.short_effect || "",
+  };
+}
+
+export async function convertPokeAPIToPokemon(
+  pokemonData: PokeAPIPokemon,
+  speciesData: PokeAPISpecies,
+  properName: string,
+  key: PokemonKey,
+): Promise<Pokemon> {
+  // Extract stats
+  const statsMap = new Map(
+    pokemonData.stats.map((s) => [
+      s.stat.name.replace("-", ""), // "special-attack" → "specialattack"
+      s.base_stat,
+    ]),
+  );
+
+  const baseStats: Record<Stat, number> = {
+    hp: statsMap.get("hp")!,
+    attack: statsMap.get("attack")!,
+    defense: statsMap.get("defense")!,
+    specialattack: statsMap.get("specialattack")!,
+    specialdefense: statsMap.get("specialdefense")!,
+    speed: statsMap.get("speed")!,
+  };
+
+  const baseStatsTotal = Object.values(baseStats).reduce((a, b) => a + b, 0);
+
+  // Extract types
+  const types = pokemonData.types
+    .sort((a, b) => a.slot - b.slot)
+    .map((t) => t.type.name as Type);
+
+  // Compute weaknesses using type chart
+  const weaknesses = computeWeaknessesFromTypes(types);
+
+  // Fetch abilities (need to make additional requests)
+  const abilitiesData = await Promise.all(
+    pokemonData.abilities
+      .slice(0, 3)
+      .map((a) => pokeapi.getAbility(a.ability.name)),
+  );
+
+  const abilities = {
+    first: convertAbility(
+      pokemonData.abilities.find((a) => a.slot === 1),
+      abilitiesData.find((_, i) => pokemonData.abilities[i].slot === 1),
+    )!,
+    second: convertAbility(
+      pokemonData.abilities.find((a) => a.slot === 2),
+      abilitiesData.find((_, i) => pokemonData.abilities[i].slot === 2),
+    ),
+    hidden: convertAbility(
+      pokemonData.abilities.find((a) => a.is_hidden),
+      abilitiesData.find((_, i) => pokemonData.abilities[i].is_hidden),
+    ),
+  };
+
+  // Extract flavor text
+  const flavorEntry = speciesData.flavor_text_entries.find(
+    (e) => e.language.name === "en",
+  );
+  const flavorText = {
+    flavor: flavorEntry?.flavor_text.replace(/\n|\f/g, " ") || "",
+    game: flavorEntry?.version.name || "",
+  };
+
+  // Gender ratio (-1 = genderless)
+  const genderRate = speciesData.gender_rate;
+  const gender =
+    genderRate === -1
+      ? null
+      : {
+          male: `${(((8 - genderRate) / 8) * 100).toFixed(1)}%`,
+          female: `${((genderRate / 8) * 100).toFixed(1)}%`,
+        };
+
+  // Rarity
+  const rarity = speciesData.is_mythical
+    ? "mythical"
+    : speciesData.is_legendary
+      ? "legendary"
+      : null;
+
+  // Sprites (keep using Showdown)
+  const [sprite, shinySprite] = constructSprites(key);
+
+  // EV yields
+  const evYields: Record<Stat, number> = Object.fromEntries(
+    pokemonData.stats.map((s) => [s.stat.name.replace("-", ""), s.effort]),
+  ) as Record<Stat, number>;
+
+  // Compute attacking info
+  const { attackerType, effectiveBaseTotal } = computeAttackingInfo({
+    baseStats,
+    baseStatsTotal,
+  } as any);
+
+  return {
+    key,
+    name: properName,
+    desc: speciesData.genera.find((g) => g.language.name === "en")?.genus || "",
+    abilities,
+    attackerType,
+    baseStats,
+    baseTotal: baseStatsTotal,
+    effectiveBaseTotal,
+    evolutionLevel: null, // Not available from PokeAPI without evolution chain
+    evYields,
+    flavorText,
+    gender,
+    height: pokemonData.height / 10, // decimeters → meters
+    weight: pokemonData.weight / 10, // hectograms → kg
+    dexNumber: speciesData.id,
+    variants: [], // Will populate from pokemonForms later
+    sprite,
+    shinySprite,
+    weaknesses,
+    rarity,
+    type: types as [Type] | [Type, Type],
+    catchRate: [
+      speciesData.capture_rate,
+      calculateCatchRatePercentage(speciesData.capture_rate),
+    ],
+  };
 }

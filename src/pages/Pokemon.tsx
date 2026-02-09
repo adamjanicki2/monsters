@@ -1,6 +1,5 @@
 import {
   Alert,
-  assertDefined,
   Box,
   Button,
   Icon,
@@ -39,7 +38,7 @@ import {
 
 export default function Pokemon() {
   const params = usePathParams();
-  const key = assertDefined(params.slug);
+  const key = params.slug as string;
   const properName = dex[key as PokemonKey] as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
@@ -489,7 +488,7 @@ function MovesSection({
       <Select
         value={String(generation)}
         options={generations.map(String)}
-        onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
+        onSelect={(gen) => setGeneration(Number(gen) as Generation)}
         getOptionLabel={(value) => `GEN ${value}`}
       />
       {movesetForGeneration.length <= 0 ? (
