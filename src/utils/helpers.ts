@@ -12,6 +12,7 @@ import {
   type PokeAPIPokemon,
   type PokeAPISpecies,
 } from "src/api/pokeapi";
+import { species } from "src/data/species";
 
 const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites";
 
@@ -268,6 +269,10 @@ export async function convertPokeAPIToPokemon(
     baseStatsTotal,
   } as any);
 
+  // Get alternate forms from species data
+  const speciesInfo = species[pokemonData.name];
+  const variants = (speciesInfo?.altForms || []) as PokemonKey[];
+
   return {
     key,
     name: properName,
@@ -284,7 +289,7 @@ export async function convertPokeAPIToPokemon(
     height: pokemonData.height / 10, // decimeters → meters
     weight: pokemonData.weight / 10, // hectograms → kg
     dexNumber: speciesData.id,
-    variants: [], // Will populate from pokemonForms later
+    variants,
     sprite,
     shinySprite,
     weaknesses,

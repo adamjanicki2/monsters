@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { gameToGen, type Generation } from "src/data/generations";
 import moves, { MoveKey } from "src/data/moves";
-import pokemon, { baseEvolutions } from "src/data/pokemon";
+import { baseEvolutions } from "src/data/pokemon";
 import { removeNonAlphanumeric } from "src/utils/helpers";
 import type { LearnMethod, MoveFragment, PokemonKey } from "src/utils/types";
+import { species } from "src/data/species";
 
 type Config = {
   key: string;
@@ -34,24 +35,31 @@ export default function useGetMoveset({ key, skip }: Config): Result {
     setState((prev: Result) => ({ ...prev, loading: true, error: undefined }));
 
     const baseEvolution = baseEvolutions[key as PokemonKey];
-    const name = pokemon[key as PokemonKey];
-    const baseEvolutionName = baseEvolution
-      ? pokemon[baseEvolution]
-      : undefined;
 
     const doApiCalls = async () => {
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
       let moves = new Map<Generation, MoveFragment[]>();
 
       try {
-        const baseMoves = await fetchApi(key, name);
+        // Get species data to determine the correct identifier
+        const speciesInfo = species[key];
+        if (!speciesInfo) {
+          throw new Error(`Species data not found for ${key}`);
+        }
+        const identifier = speciesInfo.baseForm || speciesInfo.dexNumber;
+
+        const baseMoves = await fetchApi(identifier);
         moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
 
-        if (baseEvolution && baseEvolutionName) {
-          const additionalMoves = await fetchApi(
-            baseEvolution,
-            baseEvolutionName,
-          );
+        if (baseEvolution) {
+          const baseEvolutionSpecies = species[baseEvolution];
+          if (!baseEvolutionSpecies) {
+            throw new Error(`Species data not found for ${baseEvolution}`);
+          }
+          const baseEvolutionIdentifier =
+            baseEvolutionSpecies.baseForm || baseEvolutionSpecies.dexNumber;
+
+          const additionalMoves = await fetchApi(baseEvolutionIdentifier);
           moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
         }
         moves = dedupeMovesMap(moves);
@@ -76,17 +84,8 @@ export default function useGetMoveset({ key, skip }: Config): Result {
   return state;
 }
 
-function formatName(key: string, name: string) {
-  const sanitized = name
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-
-  return sanitized || key.toLowerCase();
-}
-
-async function fetchApi(key: string, name: string) {
-  const target = `https://pokeapi.co/api/v2/pokemon/${formatName(key, name)}/`;
+async function fetchApi(identifier: string | number) {
+  const target = `https://pokeapi.co/api/v2/pokemon/${identifier}/`;
   const map = new Map<Generation, MoveFragment[]>();
   const used = new Set<string>();
 
@@ -145,10 +144,10 @@ function mergeMoveFragments(m1: MoveFragment[], m2: MoveFragment[]) {
 }
 
 const LEARN_METHOD_PRIORITY: Record<LearnMethod, number> = {
-  "level-up": 3,
-  machine: 2,
-  tutor: 1,
-  egg: 0,
+  "level-up": 4,
+  machine: 3,
+  tutor: 2,
+  egg: 1,
 };
 
 function dedupeMovesByMethod(moves: MoveFragment[]) {
