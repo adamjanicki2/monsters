@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { gameToGen, type Generation } from "src/data/generations";
-import moves, { MoveKey } from "src/data/moves";
+import type { Generation } from "src/data/generations";
+import type { MoveKey } from "src/data/moves";
 import { baseEvolutions } from "src/data/pokemon";
-import { removeNonAlphanumeric } from "src/utils/helpers";
 import type { LearnMethod, MoveFragment, PokemonKey } from "src/utils/types";
 import { species } from "src/data/species";
+import { pokeapi } from "src/api/pokeapi";
 
 type Config = {
   key: string;
@@ -48,7 +48,8 @@ export default function useGetMoveset({ key, skip }: Config): Result {
         }
         const identifier = speciesInfo.baseForm || speciesInfo.dexNumber;
 
-        const baseMoves = await fetchApi(identifier);
+        // Use pokeapi method instead of direct fetch
+        const baseMoves = await pokeapi.getMovesetForPokemon(identifier);
         moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
 
         if (baseEvolution) {
@@ -59,7 +60,9 @@ export default function useGetMoveset({ key, skip }: Config): Result {
           const baseEvolutionIdentifier =
             baseEvolutionSpecies.baseForm || baseEvolutionSpecies.dexNumber;
 
-          const additionalMoves = await fetchApi(baseEvolutionIdentifier);
+          const additionalMoves = await pokeapi.getMovesetForPokemon(
+            baseEvolutionIdentifier
+          );
           moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
         }
         moves = dedupeMovesMap(moves);
@@ -82,41 +85,6 @@ export default function useGetMoveset({ key, skip }: Config): Result {
   }, [key, skip]);
 
   return state;
-}
-
-async function fetchApi(identifier: string | number) {
-  const target = `https://pokeapi.co/api/v2/pokemon/${identifier}/`;
-  const map = new Map<Generation, MoveFragment[]>();
-  const used = new Set<string>();
-
-  try {
-    const data = await (await fetch(target)).json();
-    data.moves.forEach((moveData: any) => {
-      const moveKey = removeNonAlphanumeric(
-        moveData.move.name,
-      ).toLowerCase() as MoveKey;
-      const move = moves[moveKey];
-
-      if (move) {
-        moveData.version_group_details.forEach((groupDetails: any) => {
-          const game = groupDetails.version_group.name;
-          const method = groupDetails.move_learn_method.name as LearnMethod;
-          const gen = gameToGen[game];
-          const hashKey = `${gen}${moveKey}${method}`;
-          if (gen && !used.has(hashKey)) {
-            used.add(hashKey);
-            const movesForGen = map.get(gen) || [];
-            movesForGen.push({ ...move, key: moveKey, method });
-            map.set(gen, movesForGen);
-          }
-        });
-      }
-    });
-  } catch (e) {
-    throw e;
-  }
-
-  return map;
 }
 
 function mergeMaps<K, V>(
