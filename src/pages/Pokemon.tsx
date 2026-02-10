@@ -21,7 +21,7 @@ import Page from "src/components/Page";
 import SimpleTable from "src/components/SimpleTable";
 import TypeBadge from "src/components/TypeBadge";
 import generations, { Generation } from "src/data/generations";
-import { pokemon as dex, type SpeciesKey, speciesKeys } from "src/data/species";
+import { species as dex, type SpeciesKey, speciesKeys } from "src/data/species";
 import useGetMoveset from "src/hooks/useGetMoveset";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
@@ -39,7 +39,7 @@ import {
 export default function Pokemon() {
   const params = usePathParams();
   const key = params.slug as string;
-  const properName = dex[key as SpeciesKey] as string | undefined;
+  const properName = dex[key as SpeciesKey]?.name as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
   const movesResult = useGetMoveset({
@@ -117,7 +117,7 @@ function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
     return (
       <Link to={`/dex/${key}`} vfx={commonLinkVfx}>
         {isPrev && <Icon icon={chevronLeft} />}#
-        {padDexNumber(neighborIndex + 1)} {dex[key]}
+        {padDexNumber(neighborIndex + 1)} {dex[key].name}
         {!isPrev && <Icon icon={chevronRight} />}
       </Link>
     );

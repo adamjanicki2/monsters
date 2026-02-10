@@ -1,6 +1,6 @@
 import type { Generation } from "src/data/generations";
 import type { MoveKey } from "src/data/moves";
-import { baseEvolutions, species } from "src/data/species";
+import { species } from "src/data/species";
 import type { LearnMethod, MoveFragment, SpeciesKey } from "src/utils/types";
 import { pokeapi } from "src/api/pokeapi";
 import useQuery from "./useQuery";
@@ -17,7 +17,7 @@ type Result = {
 };
 
 export default function useGetMoveset({ key, skip }: Config): Result {
-  const baseEvolution = baseEvolutions[key as SpeciesKey];
+  const baseEvolution = species[key as SpeciesKey]?.baseEvolution;
 
   const { data, loading, error } = useQuery(
     async () => {
@@ -37,9 +37,6 @@ export default function useGetMoveset({ key, skip }: Config): Result {
       // Fetch evolution moves if applicable
       if (baseEvolution) {
         const baseEvolutionSpecies = species[baseEvolution];
-        if (!baseEvolutionSpecies) {
-          throw new Error(`Species data not found for ${baseEvolution}`);
-        }
         const baseEvolutionIdentifier =
           baseEvolutionSpecies.baseForm || baseEvolution;
 

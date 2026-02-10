@@ -102,7 +102,7 @@ export function clamp(n: number, min: number, max: number) {
 
 export function padDexNumber(dexNo: number): string {
   const str = `${dexNo}`;
-  const missingChars = 3 - str.length;
+  const missingChars = 4 - str.length;
 
   return "0".repeat(missingChars) + str;
 }
