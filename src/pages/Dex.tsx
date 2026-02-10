@@ -1,20 +1,10 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Icon,
-  Link,
-  Select,
-  Spinner,
-  Tooltip,
-  ui,
-} from "@adamjanicki/ui";
+import { Box, Button, Icon, Link, Select, Tooltip, ui } from "@adamjanicki/ui";
 import { chevronDown, chevronUp } from "@adamjanicki/ui/icons";
 import React, { useMemo, useState } from "react";
+import { pokeapi } from "src/api/pokeapi";
 import BigBadge from "src/components/BigBadge";
 import Page from "src/components/Page";
 import TypeBadge from "src/components/TypeBadge";
-import useListPokemon from "src/hooks/useListPokemon";
 import { getEffectiveBadgeInfo } from "src/pages/Pokemon";
 import { padDexNumber } from "src/utils/helpers";
 
@@ -35,36 +25,15 @@ const sortLabels = {
 } as const;
 
 export default function Dex() {
-  const { pokemon, loading, error } = useListPokemon();
+  const pokemon = pokeapi.getAllPokemon();
   const [sortKey, setSortKey] = useState<DexSortKey>("dexNumber");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const sortedPokemon = useMemo(() => {
-    if (!pokemon) return null;
     pokemon.sort((a, b) => cmp(a[sortKey], b[sortKey], sortDir));
 
     return pokemon;
   }, [pokemon, sortKey, sortDir]);
-
-  if (error || (!loading && !pokemon)) {
-    return (
-      <Wrapper>
-        <Alert type="error">
-          {error || "There was an error fetching from the API"}
-        </Alert>
-      </Wrapper>
-    );
-  }
-
-  if (loading || !pokemon || !sortedPokemon) {
-    return (
-      <Wrapper>
-        <Box vfx={{ width: "full" }}>
-          <Spinner />
-        </Box>
-      </Wrapper>
-    );
-  }
 
   return (
     <Wrapper>

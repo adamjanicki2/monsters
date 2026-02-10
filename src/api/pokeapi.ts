@@ -82,7 +82,6 @@ type PokeAPIAbility = {
   }>;
 };
 
-// Import types for conversion
 import type {
   Pokemon,
   SpeciesKey,
@@ -105,7 +104,6 @@ import {
 import moves from "src/data/moves";
 import { gameToGen } from "src/data/generations";
 
-// Helper functions (internal to module)
 function calculateCatchRatePercentage(captureRate: number): string {
   const percentage = (captureRate / 255) * 100;
   return `${percentage.toFixed(1)}%`;
@@ -181,7 +179,6 @@ class PokeAPIClient {
     return requestPromise;
   }
 
-  // Raw API methods (private)
   private async getPokemonRaw(
     nameOrId: string | number,
   ): Promise<PokeAPIPokemon> {
@@ -204,14 +201,13 @@ class PokeAPIClient {
     return this.fetchWithCache(`${POKEAPI_BASE}/ability/${nameOrId}/`);
   }
 
-  async getAllPokemon(): Promise<PokemonFragment[]> {
-    // No API call needed - generate from local species data
+  getAllPokemon(): PokemonFragment[] {
     return speciesKeys.map((key, index) => {
       const speciesData = species[key];
       return {
         key,
         name: speciesData.name,
-        dexNumber: index + 1, // species.ts is generated in dex number order by scraper.py
+        dexNumber: index + 1,
         sprite: buildSprite(key),
         type: speciesData.types as [Type] | [Type, Type],
         baseTotal: speciesData.base,
@@ -221,28 +217,23 @@ class PokeAPIClient {
   }
 
   async getPokemonFull(key: SpeciesKey, properName: string): Promise<Pokemon> {
-    // Get species data
     const speciesInfo = species[key];
     if (!speciesInfo) {
       throw new Error(`Species data not found for ${key}`);
     }
 
-    // Determine identifier for pokemon endpoint
     const pokemonIdentifier = speciesInfo.baseForm || key;
 
-    // Fetch both in parallel
     const [speciesData, pokemonData] = await Promise.all([
-      this.getPokemonSpeciesRaw(key), // Use key instead of speciesInfo.dexNumber
+      this.getPokemonSpeciesRaw(key),
       this.getPokemonRaw(pokemonIdentifier),
     ]);
 
-    // Extract and compute data
     const baseStats = extractStats(pokemonData);
     const baseStatsTotal = Object.values(baseStats).reduce((a, b) => a + b, 0);
     const types = extractTypes(pokemonData);
     const weaknesses = computeWeaknessesFromTypes(types);
 
-    // Fetch abilities
     const abilitiesData = await Promise.all(
       pokemonData.abilities
         .slice(0, 3)
@@ -264,7 +255,6 @@ class PokeAPIClient {
       ),
     };
 
-    // Extract flavor text
     const flavorEntry = speciesData.flavor_text_entries.find(
       (e) => e.language.name === "en",
     );
@@ -273,7 +263,6 @@ class PokeAPIClient {
       game: flavorEntry?.version.name || "",
     };
 
-    // Gender ratio
     const genderRate = speciesData.gender_rate;
     const gender =
       genderRate === -1
@@ -283,29 +272,24 @@ class PokeAPIClient {
             female: `${((genderRate / 8) * 100).toFixed(1)}%`,
           };
 
-    // Rarity
     const rarity = speciesData.is_mythical
       ? "mythical"
       : speciesData.is_legendary
         ? "legendary"
         : null;
 
-    // Sprites
     const sprite = buildSprite(key);
     const shinySprite = buildSprite(key, { shiny: true });
 
-    // EV yields
     const evYields: Record<Stat, number> = Object.fromEntries(
       pokemonData.stats.map((s) => [s.stat.name, s.effort]),
     ) as Record<Stat, number>;
 
-    // Compute attacking info
     const { attackerType, effectiveBaseTotal } = computeAttackingInfo({
       baseStats,
       baseStatsTotal,
     } as any);
 
-    // Get alternate forms
     const speciesLookup = species[pokemonData.name as SpeciesKey];
     const variants = (speciesLookup?.forms || []) as SpeciesKey[];
 

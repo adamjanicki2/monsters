@@ -9,16 +9,13 @@ export function computeWeaknessesFromTypes(
 ): Pokemon["weaknesses"] {
   const multipliers = new Map<Type, number>();
 
-  // Initialize all types to 1x
   allTypes.forEach((type) => multipliers.set(type, 1));
 
-  // Apply type 1 matchups
   const matchup1 = typeChart[types[0]];
   matchup1.doubleDamageFrom.forEach((t) => multipliers.set(t, 2));
   matchup1.halfDamageFrom.forEach((t) => multipliers.set(t, 0.5));
   matchup1.noDamageFrom.forEach((t) => multipliers.set(t, 0));
 
-  // Apply type 2 matchups (multiply)
   if (types[1]) {
     const matchup2 = typeChart[types[1]];
     matchup2.doubleDamageFrom.forEach((t) =>
@@ -30,7 +27,6 @@ export function computeWeaknessesFromTypes(
     matchup2.noDamageFrom.forEach((t) => multipliers.set(t, 0));
   }
 
-  // Group by multiplier value
   const quad: Type[] = [];
   const double: Type[] = [];
   const normal: Type[] = [];

@@ -23,18 +23,15 @@ export default function useGetMoveset({ key, skip }: Config): Result {
     async () => {
       let moves = new Map<Generation, MoveFragment[]>();
 
-      // Get species data to determine the correct identifier
       const speciesInfo = species[key as SpeciesKey];
       if (!speciesInfo) {
         throw new Error(`Species data not found for ${key}`);
       }
       const identifier = speciesInfo.baseForm || (key as SpeciesKey);
 
-      // Fetch base moves
       const baseMoves = await pokeapi.getMovesetForPokemon(identifier);
       moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
 
-      // Fetch evolution moves if applicable
       if (baseEvolution) {
         const baseEvolutionSpecies = species[baseEvolution];
         const baseEvolutionIdentifier =
