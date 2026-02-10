@@ -1,5 +1,5 @@
-// Internal PokeAPI type definitions (not exported)
-interface PokeAPIPokemon {
+// Custom types describing PokeAPI V2 shape
+type PokeAPIPokemon = {
   id: number;
   name: string;
   height: number;
@@ -28,9 +28,9 @@ interface PokeAPIPokemon {
       move_learn_method: { name: string };
     }>;
   }>;
-}
+};
 
-interface PokeAPISpecies {
+type PokeAPISpecies = {
   id: number;
   name: string;
   gender_rate: number;
@@ -46,9 +46,9 @@ interface PokeAPISpecies {
     genus: string;
     language: { name: string };
   }>;
-}
+};
 
-interface PokeAPIMove {
+type PokeAPIMove = {
   id: number;
   name: string;
   accuracy: number | null;
@@ -62,25 +62,33 @@ interface PokeAPIMove {
     short_effect: string;
     language: { name: string };
   }>;
+  names: Array<{
+    name: string;
+    language: { name: string };
+  }>;
   target: { name: string };
-}
+};
 
-interface PokeAPIAbility {
+type PokeAPIAbility = {
   name: string;
   effect_entries: Array<{
     effect: string;
     short_effect: string;
     language: { name: string };
   }>;
-}
+  names: Array<{
+    name: string;
+    language: { name: string };
+  }>;
+};
 
-interface PokeAPIPokemonList {
+type PokeAPIPokemonList = {
   count: number;
   results: Array<{
     name: string;
     url: string;
   }>;
-}
+};
 
 // Import types for conversion
 import type {
@@ -97,22 +105,15 @@ import type {
 import type { MoveKey } from "src/data/moves";
 import type { Generation } from "src/data/generations";
 import { species } from "src/data/species";
+import pokemon from "src/data/pokemon";
 import {
   computeWeaknessesFromTypes,
   computeAttackingInfo,
 } from "src/utils/helpers";
-import movesData from "src/data/moves";
-import { gameToGen } from "src/data/generations";
 import moves from "src/data/moves";
+import { gameToGen } from "src/data/generations";
 
 // Helper functions (internal to module)
-function formatAbilityName(key: string): string {
-  return key
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
 function calculateCatchRatePercentage(captureRate: number): string {
   const percentage = (captureRate / 255) * 100;
   return `${percentage.toFixed(1)}%`;
@@ -120,14 +121,14 @@ function calculateCatchRatePercentage(captureRate: number): string {
 
 function extractStats(pokemonData: PokeAPIPokemon): Record<Stat, number> {
   const statsMap = new Map(
-    pokemonData.stats.map((s) => [s.stat.name.replace("-", ""), s.base_stat]),
+    pokemonData.stats.map((s) => [s.stat.name, s.base_stat]),
   );
   return {
     hp: statsMap.get("hp")!,
     attack: statsMap.get("attack")!,
     defense: statsMap.get("defense")!,
-    specialattack: statsMap.get("specialattack")!,
-    specialdefense: statsMap.get("specialdefense")!,
+    "special-attack": statsMap.get("special-attack")!,
+    "special-defense": statsMap.get("special-defense")!,
     speed: statsMap.get("speed")!,
   };
 }
@@ -146,9 +147,10 @@ function convertAbility(
   const effectEntry = abilityData.effect_entries.find(
     (e) => e.language.name === "en",
   );
+  const nameEntry = abilityData.names.find((n) => n.language.name === "en");
   return {
     key: abilitySlot.ability.name,
-    name: formatAbilityName(abilitySlot.ability.name),
+    name: nameEntry?.name || abilitySlot.ability.name,
     shortDesc: effectEntry?.short_effect || "",
   };
 }
@@ -196,8 +198,30 @@ class PokeAPIClient {
     return this.fetchWithCache(`${POKEAPI_BASE}/ability/${nameOrId}/`);
   }
 
-  async getAllPokemonList(limit = 1025): Promise<PokeAPIPokemonList> {
+  private async getAllPokemonListRaw(
+    limit = 1025,
+  ): Promise<PokeAPIPokemonList> {
     return this.fetchWithCache(`${POKEAPI_BASE}/pokemon?limit=${limit}`);
+  }
+
+  /**
+   * Fetches and converts all Pokemon as fragments (for list view)
+   */
+  async getAllPokemon(): Promise<PokemonFragment[]> {
+    // Get list of all Pokemon from API
+    const listResponse = await this.getAllPokemonListRaw();
+
+    // Filter to only base forms we have in our pokemon.ts data
+    const pokemonKeys = Object.keys(pokemon) as PokemonKey[];
+    const relevantPokemon = listResponse.results.filter((p) =>
+      pokemonKeys.includes(p.name as PokemonKey)
+    );
+
+    // Fetch fragments for each Pokemon in parallel
+    const fragmentsPromises = relevantPokemon.map((p) =>
+      this.getPokemonFragment(p.name as PokemonKey, pokemon[p.name as PokemonKey])
+    );
+    return Promise.all(fragmentsPromises);
   }
 
   /**
@@ -279,7 +303,7 @@ class PokeAPIClient {
 
     // EV yields
     const evYields: Record<Stat, number> = Object.fromEntries(
-      pokemonData.stats.map((s) => [s.stat.name.replace("-", ""), s.effort]),
+      pokemonData.stats.map((s) => [s.stat.name, s.effort]),
     ) as Record<Stat, number>;
 
     // Compute attacking info
@@ -361,10 +385,12 @@ class PokeAPIClient {
     const effectEntry = moveData.effect_entries.find(
       (e) => e.language.name === "en",
     );
+    const nameEntry = moveData.names.find((n) => n.language.name === "en");
 
     return {
       key,
       ...localMove,
+      name: nameEntry?.name || localMove.name,
       pp: moveData.pp,
       priority: moveData.priority,
       target: moveData.target.name,
@@ -386,7 +412,7 @@ class PokeAPIClient {
       const moveKey = moveData.move.name
         .replace(/[^a-z0-9]/gi, "")
         .toLowerCase() as MoveKey;
-      const move = movesData[moveKey];
+      const move = moves[moveKey];
 
       if (move) {
         moveData.version_group_details.forEach((groupDetails: any) => {

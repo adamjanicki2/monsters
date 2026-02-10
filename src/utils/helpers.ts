@@ -55,15 +55,15 @@ export function computeAttackingInfo(pokemon: {
   baseStatsTotal: number;
 }) {
   const { baseStats, baseStatsTotal } = pokemon;
-  const { attack, specialattack } = baseStats;
+  const { attack, "special-attack": specialAttack } = baseStats;
   let attackerType: AttackerType = "special";
   let effectiveBaseTotal = baseStatsTotal;
 
-  if (specialattack >= attack) {
+  if (specialAttack >= attack) {
     effectiveBaseTotal -= attack;
   } else {
     attackerType = "physical";
-    effectiveBaseTotal -= specialattack;
+    effectiveBaseTotal -= specialAttack;
   }
 
   return {

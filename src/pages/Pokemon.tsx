@@ -654,6 +654,6 @@ const STAT_LABELS = {
   speed: "Speed",
   attack: "Attack",
   defense: "Defense",
-  specialattack: "Sp. Atk",
-  specialdefense: "Sp. Def",
+  "special-attack": "Sp. Atk",
+  "special-defense": "Sp. Def",
 } as const;

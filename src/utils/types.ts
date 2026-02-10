@@ -26,8 +26,8 @@ export const stats = [
   "hp",
   "attack",
   "defense",
-  "specialattack",
-  "specialdefense",
+  "special-attack",
+  "special-defense",
   "speed",
 ] as const;
 
