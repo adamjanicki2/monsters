@@ -159,20 +159,34 @@ const POKEAPI_BASE = "https://pokeapi.co/api/v2";
 
 class PokeAPIClient {
   private cache = new Map<string, any>();
+  private inFlightRequests = new Map<string, Promise<any>>();
 
   private async fetchWithCache<T>(url: string): Promise<T> {
     if (this.cache.has(url)) {
       return this.cache.get(url);
     }
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`PokeAPI error: ${response.statusText}`);
+    if (this.inFlightRequests.has(url)) {
+      return this.inFlightRequests.get(url);
     }
 
-    const data = await response.json();
-    this.cache.set(url, data);
-    return data;
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`PokeAPI error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        this.cache.set(url, data);
+        return data;
+      } finally {
+        this.inFlightRequests.delete(url);
+      }
+    })();
+
+    this.inFlightRequests.set(url, requestPromise);
+    return requestPromise;
   }
 
   // Raw API methods (private)
@@ -204,29 +218,23 @@ class PokeAPIClient {
     return this.fetchWithCache(`${POKEAPI_BASE}/pokemon?limit=${limit}`);
   }
 
-  /**
-   * Fetches and converts all Pokemon as fragments (for list view)
-   */
   async getAllPokemon(): Promise<PokemonFragment[]> {
     // Get list of all Pokemon from API
     const listResponse = await this.getAllPokemonListRaw();
 
     // Filter to only base forms we have in our pokemon.ts data
     const pokemonKeys = Object.keys(pokemon) as PokemonKey[];
-    const relevantPokemon = listResponse.results.filter((p) =>
-      pokemonKeys.includes(p.name as PokemonKey)
+    const relevantPokemon = listResponse.results.filter(({ name }) =>
+      pokemonKeys.includes(name as PokemonKey),
     );
 
     // Fetch fragments for each Pokemon in parallel
-    const fragmentsPromises = relevantPokemon.map((p) =>
-      this.getPokemonFragment(p.name as PokemonKey, pokemon[p.name as PokemonKey])
+    const fragmentsPromises = relevantPokemon.map(({ name }) =>
+      this.getPokemonFragment(name as PokemonKey, pokemon[name as PokemonKey]),
     );
     return Promise.all(fragmentsPromises);
   }
 
-  /**
-   * Fetches and converts a complete Pokemon (pokemon + species data)
-   */
   async getPokemonFull(key: PokemonKey, properName: string): Promise<Pokemon> {
     // Get species data to find dex number
     const speciesInfo = species[key];
@@ -346,9 +354,6 @@ class PokeAPIClient {
     };
   }
 
-  /**
-   * Fetches and converts a Pokemon fragment (lightweight, for list view)
-   */
   async getPokemonFragment(
     key: PokemonKey,
     name: string,
@@ -375,9 +380,6 @@ class PokeAPIClient {
     };
   }
 
-  /**
-   * Fetches and converts a move
-   */
   async getMoveFull(key: MoveKey): Promise<Move> {
     const localMove = moves[key];
     const moveData = await this.getMoveRaw(key);
@@ -398,9 +400,6 @@ class PokeAPIClient {
     };
   }
 
-  /**
-   * Fetches and converts moveset for a Pokemon
-   */
   async getMovesetForPokemon(
     identifier: string | number,
   ): Promise<Map<Generation, MoveFragment[]>> {

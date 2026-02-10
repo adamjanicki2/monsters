@@ -317,7 +317,7 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
                   vfx={{ radius: "max", shadow: "subtle" }}
                   style={{
                     width: `${widthPct}%`,
-                    height: 12,
+                    height: 14,
                     backgroundColor: statColor(value),
                   }}
                 />
