@@ -106,13 +106,12 @@ type PokemonFragment = Pick<
 type Move = {
   readonly key: MoveKey;
   readonly name: string;
-  readonly accuracy: number | true;
-  readonly power: number;
+  readonly accuracy?: number;
+  readonly power?: number;
   readonly category: Category;
   readonly priority: number;
   readonly pp: number;
   readonly type: Type;
-  readonly zPower: number;
   readonly target: string;
   readonly desc: string;
 };

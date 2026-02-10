@@ -12,11 +12,13 @@ import type { Move as MoveType } from "src/utils/types";
 export default function Move() {
   const params = usePathParams();
   const key = params.slug as string;
-  const localMove = moves[key as MoveKey];
-  const accuracy = localMove?.accuracy as true | number | undefined;
-  const { move, loading, error } = useGetMove({ key, accuracy });
+  const localMove = moves[key as MoveKey] as MoveType | undefined;
+  const { move, loading, error } = useGetMove({
+    key,
+    skip: !localMove,
+  });
 
-  if (accuracy === undefined) {
+  if (!localMove) {
     return <NotFound />;
   }
 
@@ -77,10 +79,9 @@ function MoveInfo({ move }: { move: MoveType }) {
               <CategoryIcon category={move.category} />
             </ui.span>,
           ],
-          ["Accuracy", move.accuracy === true ? "∞" : move.accuracy],
+          ["Accuracy", move.accuracy === null ? "∞" : move.accuracy],
           ["Power", move.power === 0 ? "—" : move.power],
           ["PP", move.pp],
-          move.zPower > 0 ? ["Z Power", move.zPower] : null,
         ]}
       />
 

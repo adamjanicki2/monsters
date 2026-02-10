@@ -531,16 +531,15 @@ function MovesSection({
             {
               key: "power",
               header: "Power",
-              render: (item) => (item.power <= 0 ? "—" : item.power),
+              render: ({ power }) => (!power || power <= 0 ? "—" : power),
             },
             {
               key: "accuracy",
               header: "Accuracy",
-              render: (item) => {
-                if (item.accuracy === true && item.category === "status")
-                  return "—";
-                if (item.accuracy === true) return "∞";
-                return item.accuracy;
+              render: ({ accuracy, category }) => {
+                if (!accuracy && category === "status") return "—";
+                if (accuracy === null) return "∞";
+                return accuracy;
               },
             },
           ]}

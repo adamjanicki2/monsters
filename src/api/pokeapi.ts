@@ -40,7 +40,7 @@ export interface PokeAPISpecies {
   }>;
 }
 
-export interface PokeAPIMove {
+interface PokeAPIMove {
   id: number;
   name: string;
   accuracy: number | null;
@@ -57,7 +57,7 @@ export interface PokeAPIMove {
   target: { name: string };
 }
 
-export interface PokeAPIAbility {
+interface PokeAPIAbility {
   name: string;
   effect_entries: Array<{
     effect: string;
@@ -66,7 +66,7 @@ export interface PokeAPIAbility {
   }>;
 }
 
-export interface PokeAPIPokemonList {
+interface PokeAPIPokemonList {
   count: number;
   results: Array<{
     name: string;

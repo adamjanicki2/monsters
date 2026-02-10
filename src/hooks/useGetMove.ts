@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { pokeapi } from "src/api/pokeapi";
-import type { Move } from "src/utils/types";
+import { MoveKey } from "src/data/moves";
+import type { Category, Move, Type } from "src/utils/types";
 
 type Config = {
   key: string;
-  accuracy: boolean | number | undefined;
+  skip: boolean;
 };
 
 function formatMoveName(key: string): string {
@@ -14,12 +15,10 @@ function formatMoveName(key: string): string {
     .join(" ");
 }
 
-export default function useGetMove({ key, accuracy }: Config) {
+export default function useGetMove({ key, skip }: Config) {
   const [move, setMove] = useState<Move | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
-
-  const skip = typeof accuracy === "number" || accuracy === undefined;
 
   useEffect(() => {
     if (skip) {
@@ -34,21 +33,20 @@ export default function useGetMove({ key, accuracy }: Config) {
         const moveData = await pokeapi.getMove(key);
 
         const effectEntry = moveData.effect_entries.find(
-          (e) => e.language.name === "en"
-        );
+          (e) => e.language.name === "en",
+        )!;
 
         const transformed: Move = {
-          key: key as any,
+          key: key as MoveKey,
           name: formatMoveName(key),
-          type: moveData.type.name as any,
-          category: moveData.damage_class.name as any,
-          accuracy: moveData.accuracy === null ? true : moveData.accuracy,
-          power: moveData.power || 0,
+          type: moveData.type.name as Type,
+          category: moveData.damage_class.name as Category,
+          accuracy: moveData.accuracy || undefined,
+          power: moveData.power || undefined,
           pp: moveData.pp,
           priority: moveData.priority,
-          zPower: 0, // PokeAPI doesn't provide this easily
           target: moveData.target.name,
-          desc: effectEntry?.effect || effectEntry?.short_effect || "",
+          desc: effectEntry.short_effect,
         };
 
         setMove(transformed);

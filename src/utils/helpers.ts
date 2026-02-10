@@ -182,7 +182,7 @@ export async function convertPokeAPIToPokemon(
 ): Promise<Pokemon> {
   // Extract stats
   const statsMap = new Map(
-    pokemonData.stats.map((s) => [
+    pokemonData.stats.map((s: any) => [
       s.stat.name.replace("-", ""), // "special-attack" → "specialattack"
       s.base_stat,
     ]),
