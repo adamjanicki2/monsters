@@ -107,8 +107,18 @@ export function padDexNumber(dexNo: number): string {
   return "0".repeat(missingChars) + str;
 }
 
-export const makeIconSprite = (key: string) =>
-  `${SPRITE_BASE}/home-centered/${key}.png`;
+type SpriteVariant = "home-centered";
+
+type SpriteOptions = {
+  readonly shiny?: boolean;
+  readonly variant?: SpriteVariant;
+};
+
+export function buildSprite(key: string, options: SpriteOptions = {}) {
+  const { shiny = false, variant = "home-centered" } = options;
+  const folder = shiny ? `${variant}-shiny` : variant;
+  return `${SPRITE_BASE}/${folder}/${key.replaceAll("-", "")}.png`;
+}
 
 export function partition<K extends string, T extends object>(
   arr: T[],

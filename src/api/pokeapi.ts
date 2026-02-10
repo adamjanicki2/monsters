@@ -98,6 +98,7 @@ import type { MoveKey } from "src/data/moves";
 import type { Generation } from "src/data/generations";
 import { species, speciesKeys } from "src/data/species";
 import {
+  buildSprite,
   computeWeaknessesFromTypes,
   computeAttackingInfo,
 } from "src/utils/helpers";
@@ -211,7 +212,7 @@ class PokeAPIClient {
         key,
         name: speciesData.name,
         dexNumber: index + 1, // species.ts is generated in dex number order by scraper.py
-        sprite: `https://play.pokemonshowdown.com/sprites/home-centered/${key}.png`,
+        sprite: buildSprite(key),
         type: speciesData.types as [Type] | [Type, Type],
         baseTotal: speciesData.base,
         effectiveBaseTotal: speciesData.eff,
@@ -290,8 +291,8 @@ class PokeAPIClient {
         : null;
 
     // Sprites
-    const sprite = `https://play.pokemonshowdown.com/sprites/home-centered/${key}.png`;
-    const shinySprite = `https://play.pokemonshowdown.com/sprites/home-centered-shiny/${key}.png`;
+    const sprite = buildSprite(key);
+    const shinySprite = buildSprite(key, { shiny: true });
 
     // EV yields
     const evYields: Record<Stat, number> = Object.fromEntries(
@@ -357,7 +358,7 @@ class PokeAPIClient {
       key,
       name,
       dexNumber: pokemonData.id,
-      sprite: `https://play.pokemonshowdown.com/sprites/home-centered/${key}.png`,
+      sprite: buildSprite(key),
       type: types as [Type] | [Type, Type],
       baseTotal: baseStatsTotal,
       effectiveBaseTotal,

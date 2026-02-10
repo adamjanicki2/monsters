@@ -14,7 +14,7 @@ import React, { useEffect, useRef, useState } from "react";
 import TypeBadge from "src/components/TypeBadge";
 import moves, { MoveKey, moveKeys } from "src/data/moves";
 import { species, type SpeciesKey, speciesKeys } from "src/data/species";
-import { makeIconSprite, partition } from "src/utils/helpers";
+import { buildSprite, partition } from "src/utils/helpers";
 import type { Category, Type } from "src/utils/types";
 
 type PokemonResult = {
@@ -287,7 +287,7 @@ const renderPokemonResult = (result: PokemonResult) => (
   <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
     <ui.strong vfx={{ fontSize: "m" }}>{result.data.name}</ui.strong>
     <ui.img
-      src={makeIconSprite(result.data.key)}
+      src={buildSprite(result.data.key)}
       alt={result.data.name}
       width={48}
       height={48}
