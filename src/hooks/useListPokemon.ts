@@ -1,29 +1,8 @@
-import { useState, useEffect } from "react";
 import { pokeapi } from "src/api/pokeapi";
-import type { PokemonFragment } from "src/utils/types";
+import useQuery from "./useQuery";
 
 export default function useListPokemon() {
-  const [data, setData] = useState<PokemonFragment[] | undefined>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>();
-
-  useEffect(() => {
-    const fetchAllPokemon = async () => {
-      try {
-        setLoading(true);
-        const fragments = await pokeapi.getAllPokemon();
-        setData(fragments);
-        setError(undefined);
-      } catch (e) {
-        setError(`Failed to fetch Pokemon list: ${(e as Error).message}`);
-        setData(undefined);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllPokemon();
-  }, []);
+  const { data, loading, error } = useQuery(() => pokeapi.getAllPokemon(), []);
 
   return { pokemon: data, loading, error };
 }

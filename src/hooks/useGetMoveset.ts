@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
 import type { Generation } from "src/data/generations";
 import type { MoveKey } from "src/data/moves";
 import { baseEvolutions } from "src/data/pokemon";
 import type { LearnMethod, MoveFragment, PokemonKey } from "src/utils/types";
 import { species } from "src/data/species";
 import { pokeapi } from "src/api/pokeapi";
+import useQuery from "./useQuery";
 
 type Config = {
   key: string;
@@ -18,73 +18,45 @@ type Result = {
 };
 
 export default function useGetMoveset({ key, skip }: Config): Result {
-  const [state, setState] = useState<Result>({
-    loading: false,
-    moves: undefined,
-  });
+  const baseEvolution = baseEvolutions[key as PokemonKey];
 
-  useEffect(() => {
-    if (skip) {
-      return setState({
-        loading: false,
-        error: undefined,
-        moves: undefined,
-      });
-    }
-
-    setState((prev: Result) => ({ ...prev, loading: true, error: undefined }));
-
-    const baseEvolution = baseEvolutions[key as PokemonKey];
-
-    const doApiCalls = async () => {
-      setState((prev) => ({ ...prev, loading: true, error: undefined }));
+  const { data, loading, error } = useQuery(
+    async () => {
       let moves = new Map<Generation, MoveFragment[]>();
 
-      try {
-        // Get species data to determine the correct identifier
-        const speciesInfo = species[key];
-        if (!speciesInfo) {
-          throw new Error(`Species data not found for ${key}`);
+      // Get species data to determine the correct identifier
+      const speciesInfo = species[key];
+      if (!speciesInfo) {
+        throw new Error(`Species data not found for ${key}`);
+      }
+      const identifier = speciesInfo.baseForm || speciesInfo.dexNumber;
+
+      // Fetch base moves
+      const baseMoves = await pokeapi.getMovesetForPokemon(identifier);
+      moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
+
+      // Fetch evolution moves if applicable
+      if (baseEvolution) {
+        const baseEvolutionSpecies = species[baseEvolution];
+        if (!baseEvolutionSpecies) {
+          throw new Error(`Species data not found for ${baseEvolution}`);
         }
-        const identifier = speciesInfo.baseForm || speciesInfo.dexNumber;
+        const baseEvolutionIdentifier =
+          baseEvolutionSpecies.baseForm || baseEvolutionSpecies.dexNumber;
 
-        // Use pokeapi method instead of direct fetch
-        const baseMoves = await pokeapi.getMovesetForPokemon(identifier);
-        moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
-
-        if (baseEvolution) {
-          const baseEvolutionSpecies = species[baseEvolution];
-          if (!baseEvolutionSpecies) {
-            throw new Error(`Species data not found for ${baseEvolution}`);
-          }
-          const baseEvolutionIdentifier =
-            baseEvolutionSpecies.baseForm || baseEvolutionSpecies.dexNumber;
-
-          const additionalMoves = await pokeapi.getMovesetForPokemon(
-            baseEvolutionIdentifier
-          );
-          moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
-        }
-        moves = dedupeMovesMap(moves);
-      } catch (e) {
-        return setState({
-          loading: false,
-          error: (e as Error).message,
-          moves: undefined,
-        });
+        const additionalMoves = await pokeapi.getMovesetForPokemon(
+          baseEvolutionIdentifier,
+        );
+        moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
       }
 
-      setState({
-        loading: false,
-        error: undefined,
-        moves,
-      });
-    };
+      return dedupeMovesMap(moves);
+    },
+    [key, baseEvolution],
+    !skip,
+  );
 
-    doApiCalls();
-  }, [key, skip]);
-
-  return state;
+  return { moves: data, loading, error };
 }
 
 function mergeMaps<K, V>(

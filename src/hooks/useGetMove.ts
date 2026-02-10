@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
 import { pokeapi } from "src/api/pokeapi";
 import { MoveKey } from "src/data/moves";
-import type { Move } from "src/utils/types";
+import useQuery from "./useQuery";
 
 type Config = {
   key: string;
@@ -9,32 +8,11 @@ type Config = {
 };
 
 export default function useGetMove({ key, skip }: Config) {
-  const [move, setMove] = useState<Move | undefined>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>();
+  const { data, loading, error } = useQuery(
+    () => pokeapi.getMoveFull(key as MoveKey),
+    [key],
+    !skip,
+  );
 
-  useEffect(() => {
-    if (skip) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchMove = async () => {
-      try {
-        setLoading(true);
-        const move = await pokeapi.getMoveFull(key as MoveKey);
-        setMove(move);
-        setError(undefined);
-      } catch (e) {
-        setError(`Failed to fetch move: ${(e as Error).message}`);
-        setMove(undefined);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMove();
-  }, [key, skip]);
-
-  return { move, loading, error };
+  return { move: data, loading, error };
 }
