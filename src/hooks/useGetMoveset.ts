@@ -1,8 +1,7 @@
 import type { Generation } from "src/data/generations";
 import type { MoveKey } from "src/data/moves";
-import { baseEvolutions } from "src/data/pokemon";
-import type { LearnMethod, MoveFragment, PokemonKey } from "src/utils/types";
-import { species } from "src/data/species";
+import { baseEvolutions, species } from "src/data/species";
+import type { LearnMethod, MoveFragment, SpeciesKey } from "src/utils/types";
 import { pokeapi } from "src/api/pokeapi";
 import useQuery from "./useQuery";
 
@@ -18,18 +17,18 @@ type Result = {
 };
 
 export default function useGetMoveset({ key, skip }: Config): Result {
-  const baseEvolution = baseEvolutions[key as PokemonKey];
+  const baseEvolution = baseEvolutions[key as SpeciesKey];
 
   const { data, loading, error } = useQuery(
     async () => {
       let moves = new Map<Generation, MoveFragment[]>();
 
       // Get species data to determine the correct identifier
-      const speciesInfo = species[key];
+      const speciesInfo = species[key as SpeciesKey];
       if (!speciesInfo) {
         throw new Error(`Species data not found for ${key}`);
       }
-      const identifier = speciesInfo.baseForm || speciesInfo.dexNumber;
+      const identifier = speciesInfo.baseForm || (key as SpeciesKey);
 
       // Fetch base moves
       const baseMoves = await pokeapi.getMovesetForPokemon(identifier);
@@ -42,7 +41,7 @@ export default function useGetMoveset({ key, skip }: Config): Result {
           throw new Error(`Species data not found for ${baseEvolution}`);
         }
         const baseEvolutionIdentifier =
-          baseEvolutionSpecies.baseForm || baseEvolutionSpecies.dexNumber;
+          baseEvolutionSpecies.baseForm || baseEvolution;
 
         const additionalMoves = await pokeapi.getMovesetForPokemon(
           baseEvolutionIdentifier,

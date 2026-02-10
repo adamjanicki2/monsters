@@ -1,5 +1,5 @@
 import type { MoveKey } from "src/data/moves";
-import type { PokemonKey } from "src/data/pokemon";
+import type { SpeciesKey } from "src/data/species";
 
 export const types = [
   "normal",
@@ -51,7 +51,7 @@ export const learnMethods = ["level-up", "machine", "egg", "tutor"] as const;
 type LearnMethod = (typeof learnMethods)[number];
 
 type Pokemon = {
-  readonly key: PokemonKey;
+  readonly key: SpeciesKey;
   readonly name: string;
   readonly desc: string;
   readonly abilities: {
@@ -76,7 +76,7 @@ type Pokemon = {
   readonly height: number;
   readonly weight: number;
   readonly dexNumber: number;
-  readonly variants: PokemonKey[];
+  readonly variants: SpeciesKey[];
   readonly sprite: string;
   readonly shinySprite: string;
   readonly weaknesses: {
@@ -124,7 +124,7 @@ type MoveFragment = Pick<
 };
 
 export type {
-  PokemonKey,
+  SpeciesKey,
   Pokemon,
   PokemonFragment,
   Category,

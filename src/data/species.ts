@@ -4891,3 +4891,16 @@ export type SpeciesData = {
 };
 export const speciesKeys = Object.keys(rawSpecies) as readonly SpeciesKey[];
 export const species = rawSpecies as unknown as Record<SpeciesKey, SpeciesData>;
+
+// Create a pokemon name lookup object (replaces default export from pokemon.ts)
+export const pokemon: Record<SpeciesKey, string> = Object.fromEntries(
+  Object.entries(species).map(([key, data]) => [key, data.name]),
+) as Record<SpeciesKey, string>;
+
+// Create baseEvolutions lookup (used by useGetMoveset)
+export const baseEvolutions: Partial<Record<SpeciesKey, SpeciesKey>> =
+  Object.fromEntries(
+    Object.entries(species)
+      .filter(([, data]) => data.baseEvolution)
+      .map(([key, data]) => [key, data.baseEvolution]),
+  ) as Partial<Record<SpeciesKey, SpeciesKey>>;

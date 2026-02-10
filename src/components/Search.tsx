@@ -13,7 +13,7 @@ import { FullOptions, Searcher } from "fast-fuzzy";
 import React, { useEffect, useRef, useState } from "react";
 import TypeBadge from "src/components/TypeBadge";
 import moves, { MoveKey, moveKeys } from "src/data/moves";
-import pokemon, { type PokemonKey, pokemonKeys } from "src/data/pokemon";
+import { pokemon, type SpeciesKey, speciesKeys } from "src/data/species";
 import { makeIconSprite, partition } from "src/utils/helpers";
 import type { Category, Type } from "src/utils/types";
 
@@ -52,8 +52,8 @@ type MatchResult = {
   matches: number;
 };
 
-type SearchKey = PokemonKey | MoveKey;
-const searchKeys = (pokemonKeys as Array<SearchKey>).concat(moveKeys);
+type SearchKey = SpeciesKey | MoveKey;
+const searchKeys = (speciesKeys as Array<SearchKey>).concat(moveKeys);
 
 const searcher = new Searcher<SearchKey, FullOptions<SearchKey>>(searchKeys, {
   threshold: 0.7,
@@ -64,11 +64,11 @@ function search(query: string): MatchResult {
   const rawResults = searcher.search(query);
   const results: SearchResult[] = rawResults.slice(0, 20).map((key) => {
     if (key in pokemon) {
-      const name = pokemon[key as PokemonKey];
+      const name = pokemon[key as SpeciesKey];
       return {
         type: "dex",
         data: {
-          key: key as PokemonKey,
+          key: key as SpeciesKey,
           name,
         },
       } as SearchResult;

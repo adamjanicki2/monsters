@@ -82,18 +82,10 @@ type PokeAPIAbility = {
   }>;
 };
 
-type PokeAPIPokemonList = {
-  count: number;
-  results: Array<{
-    name: string;
-    url: string;
-  }>;
-};
-
 // Import types for conversion
 import type {
   Pokemon,
-  PokemonKey,
+  SpeciesKey,
   PokemonFragment,
   Move,
   Type,
@@ -104,8 +96,7 @@ import type {
 } from "src/utils/types";
 import type { MoveKey } from "src/data/moves";
 import type { Generation } from "src/data/generations";
-import { species } from "src/data/species";
-import pokemon from "src/data/pokemon";
+import { species, speciesKeys } from "src/data/species";
 import {
   computeWeaknessesFromTypes,
   computeAttackingInfo,
@@ -212,42 +203,35 @@ class PokeAPIClient {
     return this.fetchWithCache(`${POKEAPI_BASE}/ability/${nameOrId}/`);
   }
 
-  private async getAllPokemonListRaw(
-    limit = 1025,
-  ): Promise<PokeAPIPokemonList> {
-    return this.fetchWithCache(`${POKEAPI_BASE}/pokemon?limit=${limit}`);
-  }
-
   async getAllPokemon(): Promise<PokemonFragment[]> {
-    // Get list of all Pokemon from API
-    const listResponse = await this.getAllPokemonListRaw();
-
-    // Filter to only base forms we have in our pokemon.ts data
-    const pokemonKeys = Object.keys(pokemon) as PokemonKey[];
-    const relevantPokemon = listResponse.results.filter(({ name }) =>
-      pokemonKeys.includes(name as PokemonKey),
-    );
-
-    // Fetch fragments for each Pokemon in parallel
-    const fragmentsPromises = relevantPokemon.map(({ name }) =>
-      this.getPokemonFragment(name as PokemonKey, pokemon[name as PokemonKey]),
-    );
-    return Promise.all(fragmentsPromises);
+    // No API call needed - generate from local species data
+    return speciesKeys.map((key, index) => {
+      const speciesData = species[key];
+      return {
+        key,
+        name: speciesData.name,
+        dexNumber: index + 1, // species.ts is generated in dex number order by scraper.py
+        sprite: `https://play.pokemonshowdown.com/sprites/home-centered/${key}.png`,
+        type: speciesData.types as [Type] | [Type, Type],
+        baseTotal: speciesData.base,
+        effectiveBaseTotal: speciesData.eff,
+      };
+    });
   }
 
-  async getPokemonFull(key: PokemonKey, properName: string): Promise<Pokemon> {
-    // Get species data to find dex number
+  async getPokemonFull(key: SpeciesKey, properName: string): Promise<Pokemon> {
+    // Get species data
     const speciesInfo = species[key];
     if (!speciesInfo) {
       throw new Error(`Species data not found for ${key}`);
     }
 
     // Determine identifier for pokemon endpoint
-    const pokemonIdentifier = speciesInfo.baseForm || speciesInfo.dexNumber;
+    const pokemonIdentifier = speciesInfo.baseForm || key;
 
     // Fetch both in parallel
     const [speciesData, pokemonData] = await Promise.all([
-      this.getPokemonSpeciesRaw(speciesInfo.dexNumber),
+      this.getPokemonSpeciesRaw(key), // Use key instead of speciesInfo.dexNumber
       this.getPokemonRaw(pokemonIdentifier),
     ]);
 
@@ -321,8 +305,8 @@ class PokeAPIClient {
     } as any);
 
     // Get alternate forms
-    const speciesLookup = species[pokemonData.name];
-    const variants = (speciesLookup?.altForms || []) as PokemonKey[];
+    const speciesLookup = species[pokemonData.name as SpeciesKey];
+    const variants = (speciesLookup?.forms || []) as SpeciesKey[];
 
     return {
       key,
@@ -355,7 +339,7 @@ class PokeAPIClient {
   }
 
   async getPokemonFragment(
-    key: PokemonKey,
+    key: SpeciesKey,
     name: string,
   ): Promise<PokemonFragment> {
     const pokemonData = await this.getPokemonRaw(key);

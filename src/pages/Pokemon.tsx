@@ -21,7 +21,7 @@ import Page from "src/components/Page";
 import SimpleTable from "src/components/SimpleTable";
 import TypeBadge from "src/components/TypeBadge";
 import generations, { Generation } from "src/data/generations";
-import dex, { PokemonKey, pokemonKeys } from "src/data/pokemon";
+import { pokemon as dex, type SpeciesKey, speciesKeys } from "src/data/species";
 import useGetMoveset from "src/hooks/useGetMoveset";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
@@ -39,11 +39,11 @@ import {
 export default function Pokemon() {
   const params = usePathParams();
   const key = params.slug as string;
-  const properName = dex[key as PokemonKey] as string | undefined;
+  const properName = dex[key as SpeciesKey] as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
   const movesResult = useGetMoveset({
-    key: key as PokemonKey,
+    key: key as SpeciesKey,
     skip: !properName,
   });
 
@@ -105,14 +105,14 @@ function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
   const nextIndex = index + 1;
 
   const hasPrev = index > 0;
-  const hasNext = index < pokemonKeys.length - 1;
+  const hasNext = index < speciesKeys.length - 1;
 
   const commonLinkVfx = { axis: "x", align: "center", gap: "xs" } as const;
 
   const renderNeighbor = (dir: "prev" | "next") => {
     const isPrev = dir === "prev";
     const neighborIndex = isPrev ? prevIndex : nextIndex;
-    const key = pokemonKeys[neighborIndex];
+    const key = speciesKeys[neighborIndex];
 
     return (
       <Link to={`/dex/${key}`} vfx={commonLinkVfx}>
