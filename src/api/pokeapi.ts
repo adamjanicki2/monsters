@@ -359,14 +359,14 @@ class PokeAPIClient {
     const map = new Map<Generation, MoveFragment[]>();
     const used = new Set<string>();
 
-    pokemonData.moves?.forEach((moveData: any) => {
+    pokemonData.moves?.forEach((moveData) => {
       const moveKey = moveData.move.name
         .replace(/[^a-z0-9]/gi, "")
         .toLowerCase() as MoveKey;
       const move = moves[moveKey];
 
       if (move) {
-        moveData.version_group_details.forEach((groupDetails: any) => {
+        moveData.version_group_details.forEach((groupDetails) => {
           const game = groupDetails.version_group.name;
           const method = groupDetails.move_learn_method.name as LearnMethod;
           const gen = gameToGen[game];
