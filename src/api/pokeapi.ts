@@ -104,9 +104,14 @@ import {
 import moves from "src/data/moves";
 import { gameToGen } from "src/data/generations";
 
-function calculateCatchRatePercentage(captureRate: number): string {
-  const percentage = (captureRate / 255) * 100;
-  return `${percentage.toFixed(1)}%`;
+function findEnglish<T extends { language: { name: string } }>(
+  entries: T[],
+): T {
+  return entries.find((e) => e.language.name === "en") as T;
+}
+
+function sumStats(stats: Record<Stat, number>): number {
+  return Object.values(stats).reduce((a, b) => a + b, 0);
 }
 
 function extractStats(pokemonData: PokeAPIPokemon): Record<Stat, number> {
@@ -130,18 +135,15 @@ function extractTypes(pokemonData: PokeAPIPokemon): Type[] {
 }
 
 function convertAbility(
-  abilitySlot: any,
-  abilityData: PokeAPIAbility | undefined,
-): Ability | null {
-  if (!abilitySlot || !abilityData) return null;
-  const effectEntry = abilityData.effect_entries.find(
-    (e) => e.language.name === "en",
-  );
-  const nameEntry = abilityData.names.find((n) => n.language.name === "en");
+  abilitySlot: { ability: { name: string } },
+  abilityData: PokeAPIAbility,
+): Ability {
+  const effectEntry = findEnglish(abilityData.effect_entries);
+  const nameEntry = findEnglish(abilityData.names);
   return {
     key: abilitySlot.ability.name,
-    name: nameEntry?.name || abilitySlot.ability.name,
-    shortDesc: effectEntry?.short_effect || "",
+    name: nameEntry.name,
+    shortDesc: effectEntry.short_effect,
   };
 }
 
@@ -230,37 +232,40 @@ class PokeAPIClient {
     ]);
 
     const baseStats = extractStats(pokemonData);
-    const baseStatsTotal = Object.values(baseStats).reduce((a, b) => a + b, 0);
+    const baseStatsTotal = sumStats(baseStats);
     const types = extractTypes(pokemonData);
     const weaknesses = computeWeaknessesFromTypes(types);
 
+    const sortedAbilities = [...pokemonData.abilities].sort((a, b) => {
+      if (a.is_hidden) return 1;
+      if (b.is_hidden) return -1;
+      return a.slot - b.slot;
+    });
+
     const abilitiesData = await Promise.all(
-      pokemonData.abilities
+      sortedAbilities
         .slice(0, 3)
         .map((a) => this.getAbilityRaw(a.ability.name)),
     );
 
     const abilities = {
-      first: convertAbility(
-        pokemonData.abilities.find((a) => a.slot === 1),
-        abilitiesData.find((_, i) => pokemonData.abilities[i].slot === 1),
-      )!,
-      second: convertAbility(
-        pokemonData.abilities.find((a) => a.slot === 2),
-        abilitiesData.find((_, i) => pokemonData.abilities[i].slot === 2),
-      ),
-      hidden: convertAbility(
-        pokemonData.abilities.find((a) => a.is_hidden),
-        abilitiesData.find((_, i) => pokemonData.abilities[i].is_hidden),
-      ),
+      first: convertAbility(sortedAbilities[0], abilitiesData[0]),
+      second:
+        sortedAbilities[1] && !sortedAbilities[1].is_hidden
+          ? convertAbility(sortedAbilities[1], abilitiesData[1])
+          : null,
+      hidden: sortedAbilities.find((a) => a.is_hidden)
+        ? convertAbility(
+            sortedAbilities.find((a) => a.is_hidden)!,
+            abilitiesData[sortedAbilities.findIndex((a) => a.is_hidden)],
+          )
+        : null,
     };
 
-    const flavorEntry = speciesData.flavor_text_entries.find(
-      (e) => e.language.name === "en",
-    );
+    const flavorEntry = findEnglish(speciesData.flavor_text_entries);
     const flavorText = {
-      flavor: flavorEntry?.flavor_text.replace(/\n|\f/g, " ") || "",
-      game: flavorEntry?.version.name || "",
+      flavor: flavorEntry.flavor_text.replace(/\n|\f/g, " "),
+      game: flavorEntry.version.name,
     };
 
     const genderRate = speciesData.gender_rate;
@@ -288,7 +293,7 @@ class PokeAPIClient {
     const { attackerType, effectiveBaseTotal } = computeAttackingInfo({
       baseStats,
       baseStatsTotal,
-    } as any);
+    });
 
     const speciesLookup = species[pokemonData.name as SpeciesKey];
     const variants = (speciesLookup?.forms || []) as SpeciesKey[];
@@ -296,8 +301,7 @@ class PokeAPIClient {
     return {
       key,
       name: properName,
-      desc:
-        speciesData.genera.find((g) => g.language.name === "en")?.genus || "",
+      desc: findEnglish(speciesData.genera).genus,
       abilities,
       attackerType,
       baseStats,
@@ -318,7 +322,7 @@ class PokeAPIClient {
       type: types as [Type] | [Type, Type],
       catchRate: [
         speciesData.capture_rate,
-        calculateCatchRatePercentage(speciesData.capture_rate),
+        `${((speciesData.capture_rate / 255) * 100).toFixed(1)}%`,
       ],
     };
   }
@@ -330,13 +334,13 @@ class PokeAPIClient {
     const pokemonData = await this.getPokemonRaw(key);
 
     const baseStats = extractStats(pokemonData);
-    const baseStatsTotal = Object.values(baseStats).reduce((a, b) => a + b);
+    const baseStatsTotal = sumStats(baseStats);
     const types = extractTypes(pokemonData);
 
     const { effectiveBaseTotal } = computeAttackingInfo({
       baseStats,
       baseStatsTotal,
-    } as any);
+    });
 
     return {
       key,
@@ -353,19 +357,17 @@ class PokeAPIClient {
     const localMove = moves[key];
     const moveData = await this.getMoveRaw(key);
 
-    const effectEntry = moveData.effect_entries.find(
-      (e) => e.language.name === "en",
-    );
-    const nameEntry = moveData.names.find((n) => n.language.name === "en");
+    const effectEntry = findEnglish(moveData.effect_entries);
+    const nameEntry = findEnglish(moveData.names);
 
     return {
       key,
       ...localMove,
-      name: nameEntry?.name || localMove.name,
+      name: nameEntry.name,
       pp: moveData.pp,
       priority: moveData.priority,
       target: moveData.target.name,
-      desc: effectEntry?.short_effect || "",
+      desc: effectEntry.short_effect,
     };
   }
 
