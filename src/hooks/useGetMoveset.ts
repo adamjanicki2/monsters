@@ -78,6 +78,7 @@ const LEARN_METHOD_PRIORITY: Record<LearnMethod, number> = {
   machine: 3,
   tutor: 2,
   egg: 1,
+  special: 0,
 };
 
 function dedupeMovesByMethod(moves: MoveFragment[]) {

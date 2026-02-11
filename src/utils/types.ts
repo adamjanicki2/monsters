@@ -47,7 +47,13 @@ type Rarity = "mythical" | "legendary";
 type Category = "physical" | "special" | "status";
 type AttackerType = "physical" | "special";
 
-export const learnMethods = ["level-up", "machine", "egg", "tutor"] as const;
+export const learnMethods = [
+  "level-up",
+  "machine",
+  "egg",
+  "tutor",
+  "special",
+] as const;
 type LearnMethod = (typeof learnMethods)[number];
 
 type Pokemon = {

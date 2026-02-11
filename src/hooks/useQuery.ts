@@ -12,7 +12,7 @@ export default function useQuery<T>(
   enabled = true,
 ): UseQueryResult<T> {
   const [data, setData] = useState<T | undefined>(undefined);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {

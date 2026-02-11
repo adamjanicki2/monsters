@@ -10,12 +10,16 @@ html {
 
 body * {
   /* Handles scrolling to octothorpes */
-  scroll-margin-top: 88px;
+  scroll-margin-top: 90px;
 }
 
 body {
-  font-family: "Funnel Sans", -apple-system, BlinkMacSystemFont,
-    "Helvetica Neue", sans-serif;
+  font-family:
+    "Funnel Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    sans-serif;
   overscroll-behavior: none;
   overflow-x: hidden;
   background-color: #f4f4ff;

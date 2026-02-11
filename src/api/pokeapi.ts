@@ -82,16 +82,17 @@ type PokeAPIAbility = {
   }>;
 };
 
-import type {
-  Pokemon,
-  SpeciesKey,
-  PokemonFragment,
-  Move,
-  Type,
-  Stat,
-  LearnMethod,
-  Ability,
-  MoveFragment,
+import {
+  type Pokemon,
+  type SpeciesKey,
+  type PokemonFragment,
+  type Move,
+  type Type,
+  type Stat,
+  type LearnMethod,
+  type Ability,
+  type MoveFragment,
+  learnMethods,
 } from "src/utils/types";
 import type { MoveKey } from "src/data/moves";
 import type { Generation } from "src/data/generations";
@@ -100,6 +101,7 @@ import {
   buildSprite,
   computeWeaknessesFromTypes,
   computeAttackingInfo,
+  capitalize,
 } from "src/utils/helpers";
 import moves from "src/data/moves";
 import { gameToGen } from "src/data/generations";
@@ -269,7 +271,7 @@ class PokeAPIClient {
     const flavorEntry = findEnglish(speciesData.flavor_text_entries);
     const flavorText = {
       flavor: flavorEntry.flavor_text.replace(/\n|\f/g, " "),
-      game: flavorEntry.version.name,
+      game: capitalize(flavorEntry.version.name),
     };
 
     const genderRate = speciesData.gender_rate;
@@ -360,15 +362,18 @@ class PokeAPIClient {
     const used = new Set<string>();
 
     pokemonData.moves?.forEach((moveData) => {
-      const moveKey = moveData.move.name
-        .replace(/[^a-z0-9]/gi, "")
-        .toLowerCase() as MoveKey;
+      const moveKey = moveData.move.name as MoveKey;
       const move = moves[moveKey];
 
       if (move) {
         moveData.version_group_details.forEach((groupDetails) => {
           const game = groupDetails.version_group.name;
-          const method = groupDetails.move_learn_method.name as LearnMethod;
+          const rawMethod = groupDetails.move_learn_method.name;
+          const method = (
+            (learnMethods as readonly string[]).includes(rawMethod)
+              ? rawMethod
+              : "special"
+          ) as LearnMethod;
           const gen = gameToGen[game];
           const hashKey = `${gen}${moveKey}${method}`;
           if (gen && !used.has(hashKey)) {

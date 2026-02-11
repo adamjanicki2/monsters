@@ -126,3 +126,12 @@ export function partition<K extends string, T extends object>(
 
   return map;
 }
+
+export function capitalize(str: string) {
+  return str
+    .replaceAll("-", " ")
+    .split(/\s+/g)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
