@@ -12,19 +12,19 @@ export function computeWeaknessesFromTypes(
   allTypes.forEach((type) => multipliers.set(type, 1));
 
   const matchup1 = typeChart[types[0]];
-  matchup1.doubleDamageFrom.forEach((t) => multipliers.set(t, 2));
-  matchup1.halfDamageFrom.forEach((t) => multipliers.set(t, 0.5));
-  matchup1.noDamageFrom.forEach((t) => multipliers.set(t, 0));
+  matchup1.doubleDamageFrom.forEach((type) => multipliers.set(type, 2));
+  matchup1.halfDamageFrom.forEach((type) => multipliers.set(type, 0.5));
+  matchup1.noDamageFrom.forEach((type) => multipliers.set(type, 0));
 
   if (types[1]) {
     const matchup2 = typeChart[types[1]];
-    matchup2.doubleDamageFrom.forEach((t) =>
-      multipliers.set(t, multipliers.get(t)! * 2),
+    matchup2.doubleDamageFrom.forEach((type) =>
+      multipliers.set(type, multipliers.get(type)! * 2),
     );
-    matchup2.halfDamageFrom.forEach((t) =>
-      multipliers.set(t, multipliers.get(t)! * 0.5),
+    matchup2.halfDamageFrom.forEach((type) =>
+      multipliers.set(type, multipliers.get(type)! * 0.5),
     );
-    matchup2.noDamageFrom.forEach((t) => multipliers.set(t, 0));
+    matchup2.noDamageFrom.forEach((type) => multipliers.set(type, 0));
   }
 
   const quad: Type[] = [];
@@ -88,8 +88,8 @@ export function idify(str: string) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-export function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+export function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 export function padDexNumber(dexNo: number): string {

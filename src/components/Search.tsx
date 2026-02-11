@@ -272,16 +272,10 @@ function Result({ result, onClick }: ResultRowProps) {
   );
 }
 
-const renderInnerContent = (result: SearchResult) => {
-  switch (result.type) {
-    case "dex":
-      return renderPokemonResult(result);
-    case "move":
-      return renderMoveResult(result);
-    default:
-      throw new Error("unexpected default case");
-  }
-};
+const renderInnerContent = (result: SearchResult) =>
+  result.type === "dex"
+    ? renderPokemonResult(result)
+    : renderMoveResult(result);
 
 const renderPokemonResult = (result: PokemonResult) => (
   <Box vfx={{ axis: "x", align: "center", gap: "s" }}>

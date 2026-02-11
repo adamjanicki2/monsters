@@ -27,8 +27,8 @@ export default function useQuery<T>(
         const result = await queryFn();
         setData(result);
         setError(undefined);
-      } catch (e) {
-        setError((e as Error).message);
+      } catch (error) {
+        setError((error as Error).message);
         setData(undefined);
       } finally {
         setLoading(false);

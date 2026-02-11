@@ -1,6 +1,6 @@
 import { pokeapi } from "src/api/pokeapi";
 import { MoveKey } from "src/data/moves";
-import useQuery from "./useQuery";
+import useQuery from "src/hooks/useQuery";
 
 type Config = {
   key: string;
@@ -9,7 +9,7 @@ type Config = {
 
 export default function useGetMove({ key, skip }: Config) {
   const { data, loading, error } = useQuery(
-    () => pokeapi.getMoveFull(key as MoveKey),
+    () => pokeapi.getMove(key as MoveKey),
     [key],
     !skip,
   );

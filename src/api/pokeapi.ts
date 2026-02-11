@@ -107,16 +107,19 @@ import { gameToGen } from "src/data/generations";
 function findEnglish<T extends { language: { name: string } }>(
   entries: T[],
 ): T {
-  return entries.find((e) => e.language.name === "en") as T;
+  return entries.find((entry) => entry.language.name === "en") as T;
 }
 
 function sumStats(stats: Record<Stat, number>): number {
-  return Object.values(stats).reduce((a, b) => a + b, 0);
+  return Object.values(stats).reduce((total, stat) => total + stat, 0);
 }
 
 function extractStats(pokemonData: PokeAPIPokemon): Record<Stat, number> {
   const statsMap = new Map(
-    pokemonData.stats.map((s) => [s.stat.name, s.base_stat]),
+    pokemonData.stats.map((statEntry) => [
+      statEntry.stat.name,
+      statEntry.base_stat,
+    ]),
   );
   return {
     hp: statsMap.get("hp")!,
@@ -130,8 +133,8 @@ function extractStats(pokemonData: PokeAPIPokemon): Record<Stat, number> {
 
 function extractTypes(pokemonData: PokeAPIPokemon): Type[] {
   return pokemonData.types
-    .sort((a, b) => a.slot - b.slot)
-    .map((t) => t.type.name as Type);
+    .sort((typeA, typeB) => typeA.slot - typeB.slot)
+    .map((typeEntry) => typeEntry.type.name as Type);
 }
 
 function convertAbility(
@@ -218,11 +221,8 @@ class PokeAPIClient {
     });
   }
 
-  async getPokemonFull(key: SpeciesKey, properName: string): Promise<Pokemon> {
+  async getPokemon(key: SpeciesKey, properName: string): Promise<Pokemon> {
     const speciesInfo = species[key];
-    if (!speciesInfo) {
-      throw new Error(`Species data not found for ${key}`);
-    }
 
     const pokemonIdentifier = speciesInfo.baseForm || key;
 
@@ -236,16 +236,18 @@ class PokeAPIClient {
     const types = extractTypes(pokemonData);
     const weaknesses = computeWeaknessesFromTypes(types);
 
-    const sortedAbilities = [...pokemonData.abilities].sort((a, b) => {
-      if (a.is_hidden) return 1;
-      if (b.is_hidden) return -1;
-      return a.slot - b.slot;
-    });
+    const sortedAbilities = [...pokemonData.abilities].sort(
+      (abilityA, abilityB) => {
+        if (abilityA.is_hidden) return 1;
+        if (abilityB.is_hidden) return -1;
+        return abilityA.slot - abilityB.slot;
+      },
+    );
 
     const abilitiesData = await Promise.all(
       sortedAbilities
         .slice(0, 3)
-        .map((a) => this.getAbilityRaw(a.ability.name)),
+        .map((ability) => this.getAbilityRaw(ability.ability.name)),
     );
 
     const abilities = {
@@ -254,10 +256,12 @@ class PokeAPIClient {
         sortedAbilities[1] && !sortedAbilities[1].is_hidden
           ? convertAbility(sortedAbilities[1], abilitiesData[1])
           : null,
-      hidden: sortedAbilities.find((a) => a.is_hidden)
+      hidden: sortedAbilities.find((ability) => ability.is_hidden)
         ? convertAbility(
-            sortedAbilities.find((a) => a.is_hidden)!,
-            abilitiesData[sortedAbilities.findIndex((a) => a.is_hidden)],
+            sortedAbilities.find((ability) => ability.is_hidden)!,
+            abilitiesData[
+              sortedAbilities.findIndex((ability) => ability.is_hidden)
+            ],
           )
         : null,
     };
@@ -287,7 +291,10 @@ class PokeAPIClient {
     const shinySprite = buildSprite(key, { shiny: true });
 
     const evYields: Record<Stat, number> = Object.fromEntries(
-      pokemonData.stats.map((s) => [s.stat.name, s.effort]),
+      pokemonData.stats.map((statEntry) => [
+        statEntry.stat.name,
+        statEntry.effort,
+      ]),
     ) as Record<Stat, number>;
 
     const { attackerType, effectiveBaseTotal } = computeAttackingInfo({
@@ -327,33 +334,7 @@ class PokeAPIClient {
     };
   }
 
-  async getPokemonFragment(
-    key: SpeciesKey,
-    name: string,
-  ): Promise<PokemonFragment> {
-    const pokemonData = await this.getPokemonRaw(key);
-
-    const baseStats = extractStats(pokemonData);
-    const baseStatsTotal = sumStats(baseStats);
-    const types = extractTypes(pokemonData);
-
-    const { effectiveBaseTotal } = computeAttackingInfo({
-      baseStats,
-      baseStatsTotal,
-    });
-
-    return {
-      key,
-      name,
-      dexNumber: pokemonData.id,
-      sprite: buildSprite(key),
-      type: types as [Type] | [Type, Type],
-      baseTotal: baseStatsTotal,
-      effectiveBaseTotal,
-    };
-  }
-
-  async getMoveFull(key: MoveKey): Promise<Move> {
+  async getMove(key: MoveKey): Promise<Move> {
     const localMove = moves[key];
     const moveData = await this.getMoveRaw(key);
 

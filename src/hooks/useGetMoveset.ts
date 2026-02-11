@@ -3,7 +3,7 @@ import type { MoveKey } from "src/data/moves";
 import { species } from "src/data/species";
 import type { LearnMethod, MoveFragment, SpeciesKey } from "src/utils/types";
 import { pokeapi } from "src/api/pokeapi";
-import useQuery from "./useQuery";
+import useQuery from "src/hooks/useQuery";
 
 type Config = {
   key: string;
@@ -24,9 +24,6 @@ export default function useGetMoveset({ key, skip }: Config): Result {
       let moves = new Map<Generation, MoveFragment[]>();
 
       const speciesInfo = species[key as SpeciesKey];
-      if (!speciesInfo) {
-        throw new Error(`Species data not found for ${key}`);
-      }
       const identifier = speciesInfo.baseForm || (key as SpeciesKey);
 
       const baseMoves = await pokeapi.getMovesetForPokemon(identifier);

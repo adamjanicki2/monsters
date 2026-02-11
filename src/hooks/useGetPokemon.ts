@@ -1,6 +1,6 @@
 import { pokeapi } from "src/api/pokeapi";
 import type { SpeciesKey } from "src/utils/types";
-import useQuery from "./useQuery";
+import useQuery from "src/hooks/useQuery";
 
 type Config = {
   key: string;
@@ -9,7 +9,7 @@ type Config = {
 
 export default function useGetPokemon({ key, properName }: Config) {
   const { data, loading, error } = useQuery(
-    () => pokeapi.getPokemonFull(key as SpeciesKey, properName!),
+    () => pokeapi.getPokemon(key as SpeciesKey, properName!),
     [key, properName],
     !!properName,
   );
