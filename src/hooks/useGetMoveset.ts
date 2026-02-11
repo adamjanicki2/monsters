@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
-import { gameToGen, type Generation } from "src/data/generations";
-import moves, { MoveKey } from "src/data/moves";
-import pokemon, { baseEvolutions } from "src/data/pokemon";
-import { removeNonAlphanumeric } from "src/utils/helpers";
-import type { LearnMethod, MoveFragment, PokemonKey } from "src/utils/types";
+import type { Generation } from "src/data/generations";
+import type { MoveKey } from "src/data/moves";
+import { species } from "src/data/species";
+import type { LearnMethod, MoveFragment, SpeciesKey } from "src/utils/types";
+import { pokeapi } from "src/api/pokeapi";
+import useQuery from "src/hooks/useQuery";
 
 type Config = {
   key: string;
@@ -18,113 +17,42 @@ type Result = {
 };
 
 export default function useGetMoveset({ key, skip }: Config): Result {
-  const [state, setState] = useState<Result>({
-    loading: false,
-    moves: undefined,
-  });
+  const baseEvolution = species[key as SpeciesKey]?.baseEvolution;
 
-  useEffect(() => {
-    if (skip) {
-      return setState({
-        loading: false,
-        error: undefined,
-        moves: undefined,
-      });
-    }
-
-    setState((prev: Result) => ({ ...prev, loading: true, error: undefined }));
-
-    const baseEvolution = baseEvolutions[key as PokemonKey];
-    const name = pokemon[key as PokemonKey];
-    const baseEvolutionName = baseEvolution
-      ? pokemon[baseEvolution]
-      : undefined;
-
-    const doApiCalls = async () => {
-      setState((prev) => ({ ...prev, loading: true, error: undefined }));
+  const { data, loading, error } = useQuery(
+    async () => {
       let moves = new Map<Generation, MoveFragment[]>();
 
-      try {
-        const baseMoves = await fetchApi(key, name);
-        moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
+      const speciesInfo = species[key as SpeciesKey];
+      const identifier = speciesInfo.baseForm || (key as SpeciesKey);
 
-        if (baseEvolution && baseEvolutionName) {
-          const additionalMoves = await fetchApi(
-            baseEvolution,
-            baseEvolutionName
-          );
-          moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
-        }
-        moves = dedupeMovesMap(moves);
-      } catch (e) {
-        return setState({
-          loading: false,
-          error: (e as Error).message,
-          moves: undefined,
-        });
+      const baseMoves = await pokeapi.getMovesetForPokemon(identifier);
+      moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
+
+      if (baseEvolution) {
+        const baseEvolutionSpecies = species[baseEvolution];
+        const baseEvolutionIdentifier =
+          baseEvolutionSpecies.baseForm || baseEvolution;
+
+        const additionalMoves = await pokeapi.getMovesetForPokemon(
+          baseEvolutionIdentifier,
+        );
+        moves = mergeMaps(moves, additionalMoves, mergeMoveFragments);
       }
 
-      setState({
-        loading: false,
-        error: undefined,
-        moves,
-      });
-    };
+      return dedupeMovesMap(moves);
+    },
+    [key, baseEvolution],
+    !skip,
+  );
 
-    doApiCalls();
-  }, [key, skip]);
-
-  return state;
-}
-
-function formatName(key: string, name: string) {
-  const sanitized = name
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-
-  return sanitized || key.toLowerCase();
-}
-
-async function fetchApi(key: string, name: string) {
-  const target = `https://pokeapi.co/api/v2/pokemon/${formatName(key, name)}/`;
-  const map = new Map<Generation, MoveFragment[]>();
-  const used = new Set<string>();
-
-  try {
-    const data = await (await fetch(target)).json();
-    data.moves.forEach((moveData: any) => {
-      const moveKey = removeNonAlphanumeric(
-        moveData.move.name
-      ).toLowerCase() as MoveKey;
-      const move = moves[moveKey];
-
-      if (move) {
-        moveData.version_group_details.forEach((groupDetails: any) => {
-          const game = groupDetails.version_group.name;
-          const method = groupDetails.move_learn_method.name as LearnMethod;
-          const gen = gameToGen[game];
-          const hashKey = `${gen}${moveKey}${method}`;
-          if (gen && !used.has(hashKey)) {
-            used.add(hashKey);
-            const movesForGen = map.get(gen) || [];
-            movesForGen.push({ ...move, key: moveKey, method });
-            map.set(gen, movesForGen);
-          }
-        });
-      }
-    });
-  } catch (e) {
-    throw e;
-  }
-
-  return map;
+  return { moves: data, loading, error };
 }
 
 function mergeMaps<K, V>(
   map1: Map<K, V>,
   map2: Map<K, V>,
-  combiner: (v1: V, v2: V) => V
+  combiner: (v1: V, v2: V) => V,
 ): Map<K, V> {
   const map = new Map<K, V>();
 
@@ -146,10 +74,11 @@ function mergeMoveFragments(m1: MoveFragment[], m2: MoveFragment[]) {
 }
 
 const LEARN_METHOD_PRIORITY: Record<LearnMethod, number> = {
-  "level-up": 3,
-  machine: 2,
-  tutor: 1,
-  egg: 0,
+  "level-up": 4,
+  machine: 3,
+  tutor: 2,
+  egg: 1,
+  special: 0,
 };
 
 function dedupeMovesByMethod(moves: MoveFragment[]) {

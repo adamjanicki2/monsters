@@ -1,36 +1,43 @@
-import { gql, type ErrorLike } from "@apollo/client";
-import { useQuery as useApolloQuery } from "@apollo/client/react";
-import type { Query } from "@favware/graphql-pokemon";
+import { useState, useEffect } from "react";
 
-type QueryOperation = keyof Query;
-
-type GQLResponse<T extends QueryOperation> = Record<T, Query[T]>;
-
-type Response<T extends QueryOperation> = {
-  data?: GQLResponse<T>;
+type UseQueryResult<T> = {
+  data: T | undefined;
   loading: boolean;
-  error?: string;
+  error: string | undefined;
 };
 
-function formatError(error?: ErrorLike) {
-  if (error) {
-    return `Error (${error.name}): ${error.message}`;
-  }
+export default function useQuery<T>(
+  queryFn: () => Promise<T>,
+  deps: Array<string | undefined>,
+  enabled = true,
+): UseQueryResult<T> {
+  const [data, setData] = useState<T | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>();
 
-  return undefined;
-}
+  useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
 
-type Config = {
-  query: string;
-  skip?: boolean;
-};
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const result = await queryFn();
+        setData(result);
+        setError(undefined);
+      } catch (error) {
+        setError((error as Error).message);
+        setData(undefined);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-export default function useQuery<T extends QueryOperation>({
-  query,
-  skip,
-}: Config): Response<T> {
-  const { loading, error, data } = useApolloQuery<GQLResponse<T>>(gql(query), {
-    skip,
-  });
-  return { loading, error: formatError(error), data };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...deps, enabled]);
+
+  return { data, loading, error };
 }

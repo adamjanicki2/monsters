@@ -1,11 +1,4 @@
-import {
-  Alert,
-  assertDefined,
-  Box,
-  Spinner,
-  ui,
-  usePathParams,
-} from "@adamjanicki/ui";
+import { Alert, Box, Spinner, ui, usePathParams } from "@adamjanicki/ui";
 import CategoryIcon from "src/components/CategoryIcon";
 import Header, { Subheader } from "src/components/Header";
 import Page from "src/components/Page";
@@ -18,12 +11,14 @@ import type { Move as MoveType } from "src/utils/types";
 
 export default function Move() {
   const params = usePathParams();
-  const key = assertDefined(params.slug);
-  const localMove = moves[key as MoveKey];
-  const accuracy = localMove?.accuracy as true | number | undefined;
-  const { move, loading, error } = useGetMove({ key, accuracy });
+  const key = params.slug as string;
+  const localMove = moves[key as MoveKey] as MoveType | undefined;
+  const { move, loading, error } = useGetMove({
+    key,
+    skip: !localMove,
+  });
 
-  if (accuracy === undefined) {
+  if (!localMove) {
     return <NotFound />;
   }
 
@@ -84,10 +79,9 @@ function MoveInfo({ move }: { move: MoveType }) {
               <CategoryIcon category={move.category} />
             </ui.span>,
           ],
-          ["Accuracy", move.accuracy === true ? "∞" : move.accuracy],
+          ["Accuracy", move.accuracy === null ? "∞" : move.accuracy],
           ["Power", move.power === 0 ? "—" : move.power],
           ["PP", move.pp],
-          move.zPower > 0 ? ["Z Power", move.zPower] : null,
         ]}
       />
 

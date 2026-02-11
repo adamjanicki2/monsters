@@ -7,14 +7,14 @@ import {
   ui,
   UnstyledLink,
 } from "@adamjanicki/ui";
-import { assertDefined, getDeviceType } from "@adamjanicki/ui/functions";
+import { getDeviceType } from "@adamjanicki/ui/functions";
 import { chevronRight, search as searchIcon, x } from "@adamjanicki/ui/icons";
 import { FullOptions, Searcher } from "fast-fuzzy";
 import React, { useEffect, useRef, useState } from "react";
 import TypeBadge from "src/components/TypeBadge";
 import moves, { MoveKey, moveKeys } from "src/data/moves";
-import pokemon, { type PokemonKey, pokemonKeys } from "src/data/pokemon";
-import { makeIconSprite, partition } from "src/utils/helpers";
+import { species, type SpeciesKey, speciesKeys } from "src/data/species";
+import { buildSprite, partition } from "src/utils/helpers";
 import type { Category, Type } from "src/utils/types";
 
 type PokemonResult = {
@@ -52,8 +52,8 @@ type MatchResult = {
   matches: number;
 };
 
-type SearchKey = PokemonKey | MoveKey;
-const searchKeys = (pokemonKeys as Array<SearchKey>).concat(moveKeys);
+type SearchKey = SpeciesKey | MoveKey;
+const searchKeys = (speciesKeys as Array<SearchKey>).concat(moveKeys);
 
 const searcher = new Searcher<SearchKey, FullOptions<SearchKey>>(searchKeys, {
   threshold: 0.7,
@@ -63,12 +63,12 @@ const searcher = new Searcher<SearchKey, FullOptions<SearchKey>>(searchKeys, {
 function search(query: string): MatchResult {
   const rawResults = searcher.search(query);
   const results: SearchResult[] = rawResults.slice(0, 20).map((key) => {
-    if (key in pokemon) {
-      const name = pokemon[key as PokemonKey];
+    if (key in species) {
+      const name = species[key as SpeciesKey].name;
       return {
         type: "dex",
         data: {
-          key: key as PokemonKey,
+          key: key as SpeciesKey,
           name,
         },
       } as SearchResult;
@@ -192,7 +192,7 @@ export default function Search({ open, onClose }: Props) {
             <Box vfx={{ axis: "y", padding: "s" }}>
               {showEmpty && <Empty query={normalizedQuery} />}
               {keys.map((key) => {
-                const items = assertDefined(results.get(key));
+                const items = results.get(key)!;
                 return (
                   <React.Fragment key={key}>
                     <ui.h3
@@ -272,22 +272,16 @@ function Result({ result, onClick }: ResultRowProps) {
   );
 }
 
-const renderInnerContent = (result: SearchResult) => {
-  switch (result.type) {
-    case "dex":
-      return renderPokemonResult(result);
-    case "move":
-      return renderMoveResult(result);
-    default:
-      throw new Error("unexpected default case");
-  }
-};
+const renderInnerContent = (result: SearchResult) =>
+  result.type === "dex"
+    ? renderPokemonResult(result)
+    : renderMoveResult(result);
 
 const renderPokemonResult = (result: PokemonResult) => (
   <Box vfx={{ axis: "x", align: "center", gap: "s" }}>
     <ui.strong vfx={{ fontSize: "m" }}>{result.data.name}</ui.strong>
     <ui.img
-      src={makeIconSprite(result.data.key)}
+      src={buildSprite(result.data.key)}
       alt={result.data.name}
       width={48}
       height={48}

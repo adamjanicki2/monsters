@@ -1,5 +1,5 @@
 import type { MoveKey } from "src/data/moves";
-import type { PokemonKey } from "src/data/pokemon";
+import type { SpeciesKey } from "src/data/species";
 
 export const types = [
   "normal",
@@ -26,8 +26,8 @@ export const stats = [
   "hp",
   "attack",
   "defense",
-  "specialattack",
-  "specialdefense",
+  "special-attack",
+  "special-defense",
   "speed",
 ] as const;
 
@@ -47,11 +47,17 @@ type Rarity = "mythical" | "legendary";
 type Category = "physical" | "special" | "status";
 type AttackerType = "physical" | "special";
 
-export const learnMethods = ["level-up", "machine", "egg", "tutor"] as const;
+export const learnMethods = [
+  "level-up",
+  "machine",
+  "egg",
+  "tutor",
+  "special",
+] as const;
 type LearnMethod = (typeof learnMethods)[number];
 
 type Pokemon = {
-  readonly key: PokemonKey;
+  readonly key: SpeciesKey;
   readonly name: string;
   readonly desc: string;
   readonly abilities: {
@@ -76,7 +82,7 @@ type Pokemon = {
   readonly height: number;
   readonly weight: number;
   readonly dexNumber: number;
-  readonly variants: PokemonKey[];
+  readonly variants: SpeciesKey[];
   readonly sprite: string;
   readonly shinySprite: string;
   readonly weaknesses: {
@@ -106,13 +112,12 @@ type PokemonFragment = Pick<
 type Move = {
   readonly key: MoveKey;
   readonly name: string;
-  readonly accuracy: number | true;
-  readonly power: number;
+  readonly accuracy?: number;
+  readonly power?: number;
   readonly category: Category;
   readonly priority: number;
   readonly pp: number;
   readonly type: Type;
-  readonly zPower: number;
   readonly target: string;
   readonly desc: string;
 };
@@ -125,7 +130,7 @@ type MoveFragment = Pick<
 };
 
 export type {
-  PokemonKey,
+  SpeciesKey,
   Pokemon,
   PokemonFragment,
   Category,

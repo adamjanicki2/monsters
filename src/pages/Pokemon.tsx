@@ -1,6 +1,5 @@
 import {
   Alert,
-  assertDefined,
   Box,
   Button,
   Icon,
@@ -22,7 +21,7 @@ import Page from "src/components/Page";
 import SimpleTable from "src/components/SimpleTable";
 import TypeBadge from "src/components/TypeBadge";
 import generations, { Generation } from "src/data/generations";
-import dex, { PokemonKey, pokemonKeys } from "src/data/pokemon";
+import { species as dex, type SpeciesKey, speciesKeys } from "src/data/species";
 import useGetMoveset from "src/hooks/useGetMoveset";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
@@ -39,12 +38,12 @@ import {
 
 export default function Pokemon() {
   const params = usePathParams();
-  const key = assertDefined(params.slug);
-  const properName = dex[key as PokemonKey] as string | undefined;
+  const key = params.slug as string;
+  const properName = dex[key as SpeciesKey]?.name as string | undefined;
 
   const { pokemon, loading, error } = useGetPokemon({ key, properName });
   const movesResult = useGetMoveset({
-    key: key as PokemonKey,
+    key: key as SpeciesKey,
     skip: !properName,
   });
 
@@ -106,19 +105,19 @@ function NeighborLinks({ pokemon }: { pokemon: Pokemon }) {
   const nextIndex = index + 1;
 
   const hasPrev = index > 0;
-  const hasNext = index < pokemonKeys.length - 1;
+  const hasNext = index < speciesKeys.length - 1;
 
   const commonLinkVfx = { axis: "x", align: "center", gap: "xs" } as const;
 
   const renderNeighbor = (dir: "prev" | "next") => {
     const isPrev = dir === "prev";
     const neighborIndex = isPrev ? prevIndex : nextIndex;
-    const key = pokemonKeys[neighborIndex];
+    const key = speciesKeys[neighborIndex];
 
     return (
       <Link to={`/dex/${key}`} vfx={commonLinkVfx}>
         {isPrev && <Icon icon={chevronLeft} />}#
-        {padDexNumber(neighborIndex + 1)} {dex[key]}
+        {padDexNumber(neighborIndex + 1)} {dex[key].name}
         {!isPrev && <Icon icon={chevronRight} />}
       </Link>
     );
@@ -318,7 +317,7 @@ function StatsSection({ pokemon }: { pokemon: Pokemon }) {
                   vfx={{ radius: "max", shadow: "subtle" }}
                   style={{
                     width: `${widthPct}%`,
-                    height: 12,
+                    height: 14,
                     backgroundColor: statColor(value),
                   }}
                 />
@@ -489,7 +488,7 @@ function MovesSection({
       <Select
         value={String(generation)}
         options={generations.map(String)}
-        onChange={(e) => setGeneration(Number(e.target.value) as Generation)}
+        onSelect={(gen) => setGeneration(Number(gen) as Generation)}
         getOptionLabel={(value) => `GEN ${value}`}
       />
       {movesetForGeneration.length <= 0 ? (
@@ -532,16 +531,15 @@ function MovesSection({
             {
               key: "power",
               header: "Power",
-              render: (item) => (item.power <= 0 ? "—" : item.power),
+              render: ({ power }) => (!power || power <= 0 ? "—" : power),
             },
             {
               key: "accuracy",
               header: "Accuracy",
-              render: (item) => {
-                if (item.accuracy === true && item.category === "status")
-                  return "—";
-                if (item.accuracy === true) return "∞";
-                return item.accuracy;
+              render: ({ accuracy, category }) => {
+                if (!accuracy && category === "status") return "—";
+                if (accuracy === null) return "∞";
+                return accuracy;
               },
             },
           ]}
@@ -566,6 +564,7 @@ const learnMethodHeaders: Record<LearnMethod, string> = {
   machine: "TM",
   egg: "EGG",
   tutor: "TUTOR",
+  special: "SPECIAL",
 };
 
 type MoveSortKey = "name" | "method" | "type" | "category";
@@ -656,6 +655,6 @@ const STAT_LABELS = {
   speed: "Speed",
   attack: "Attack",
   defense: "Defense",
-  specialattack: "Sp. Atk",
-  specialdefense: "Sp. Def",
+  "special-attack": "Sp. Atk",
+  "special-defense": "Sp. Def",
 } as const;

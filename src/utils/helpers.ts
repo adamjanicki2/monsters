@@ -1,151 +1,70 @@
-import type {
-  Pokemon as GQLPokemon,
-  PokemonType as GQLPokemonType,
-} from "@favware/graphql-pokemon";
-import type { AttackerType, Pokemon, PokemonKey, Type } from "src/utils/types";
+import type { AttackerType, Pokemon, Type, Stat } from "src/utils/types";
 import { types as allTypes } from "src/utils/types";
+import { typeChart } from "src/data/typeChart";
 
 const SPRITE_BASE = "https://play.pokemonshowdown.com/sprites";
 
-function constructSprites(key: PokemonKey): [string, string] {
-  return [
-    `${SPRITE_BASE}/home-centered/${key}.png`,
-    `${SPRITE_BASE}/home-centered-shiny/${key}.png`,
-  ];
-}
-
-function computeWeaknesses(
-  types: readonly GQLPokemonType[]
+export function computeWeaknessesFromTypes(
+  types: Type[],
 ): Pokemon["weaknesses"] {
-  const [type1, type2] = types;
+  const multipliers = new Map<Type, number>();
 
-  if (!type2) {
-    return {
-      quad: [],
-      double: type1.matchup.defending.effectiveTypes as Type[],
-      normal: type1.matchup.defending.normalTypes as Type[],
-      half: type1.matchup.defending.resistedTypes as Type[],
-      quarter: [],
-      none: type1.matchup.defending.effectlessTypes as Type[],
-    };
+  allTypes.forEach((type) => multipliers.set(type, 1));
+
+  const matchup1 = typeChart[types[0]];
+  matchup1.doubleDamageFrom.forEach((type) => multipliers.set(type, 2));
+  matchup1.halfDamageFrom.forEach((type) => multipliers.set(type, 0.5));
+  matchup1.noDamageFrom.forEach((type) => multipliers.set(type, 0));
+
+  if (types[1]) {
+    const matchup2 = typeChart[types[1]];
+    matchup2.doubleDamageFrom.forEach((type) =>
+      multipliers.set(type, multipliers.get(type)! * 2),
+    );
+    matchup2.halfDamageFrom.forEach((type) =>
+      multipliers.set(type, multipliers.get(type)! * 0.5),
+    );
+    matchup2.noDamageFrom.forEach((type) => multipliers.set(type, 0));
   }
 
-  const buildMultiplierMap = (type: GQLPokemonType): Record<Type, number> => {
-    const map: Partial<Record<Type, number>> = {};
+  const quad: Type[] = [];
+  const double: Type[] = [];
+  const normal: Type[] = [];
+  const half: Type[] = [];
+  const quarter: Type[] = [];
+  const none: Type[] = [];
 
-    for (const t of type.matchup.defending.effectiveTypes as Type[]) {
-      map[t] = 2;
-    }
-    for (const t of type.matchup.defending.normalTypes as Type[]) {
-      map[t] = 1;
-    }
-    for (const t of type.matchup.defending.resistedTypes as Type[]) {
-      map[t] = 0.5;
-    }
-    for (const t of type.matchup.defending.effectlessTypes as Type[]) {
-      map[t] = 0;
-    }
+  multipliers.forEach((mult, type) => {
+    if (mult === 4) quad.push(type);
+    else if (mult === 2) double.push(type);
+    else if (mult === 1) normal.push(type);
+    else if (mult === 0.5) half.push(type);
+    else if (mult === 0.25) quarter.push(type);
+    else if (mult === 0) none.push(type);
+  });
 
-    return map as Record<Type, number>;
-  };
-
-  const map1 = buildMultiplierMap(type1);
-  const map2 = buildMultiplierMap(type2);
-
-  const weaknesses: Record<keyof Pokemon["weaknesses"], Type[]> = {
-    quad: [],
-    double: [],
-    normal: [],
-    half: [],
-    quarter: [],
-    none: [],
-  };
-
-  for (const attackingType of allTypes) {
-    const m1 = map1[attackingType] ?? 1;
-    const m2 = map2[attackingType] ?? 1;
-    const multiplier = m1 * m2;
-
-    if (multiplier === 4) weaknesses.quad.push(attackingType);
-    else if (multiplier === 2) weaknesses.double.push(attackingType);
-    else if (multiplier === 1) weaknesses.normal.push(attackingType);
-    else if (multiplier === 0.5) weaknesses.half.push(attackingType);
-    else if (multiplier === 0.25) weaknesses.quarter.push(attackingType);
-    else if (multiplier === 0) weaknesses.none.push(attackingType);
-  }
-
-  return weaknesses;
+  return { quad, double, normal, half, quarter, none };
 }
 
-export function computeAttackingInfo(pokemon: GQLPokemon) {
+export function computeAttackingInfo(pokemon: {
+  baseStats: Record<Stat, number>;
+  baseStatsTotal: number;
+}) {
   const { baseStats, baseStatsTotal } = pokemon;
-  const { attack, specialattack } = baseStats;
+  const { attack, "special-attack": specialAttack } = baseStats;
   let attackerType: AttackerType = "special";
   let effectiveBaseTotal = baseStatsTotal;
 
-  if (specialattack >= attack) {
+  if (specialAttack >= attack) {
     effectiveBaseTotal -= attack;
   } else {
     attackerType = "physical";
-    effectiveBaseTotal -= specialattack;
+    effectiveBaseTotal -= specialAttack;
   }
 
   return {
     attackerType,
     effectiveBaseTotal,
-  };
-}
-
-export function convertToPokemonStruct(
-  pokemon: GQLPokemon,
-  name: string
-): Pokemon {
-  const { baseStats, baseStatsTotal } = pokemon;
-  const { attackerType, effectiveBaseTotal } = computeAttackingInfo(pokemon);
-  const key = pokemon.key.valueOf() as PokemonKey;
-  const [sprite, shinySprite] = constructSprites(key);
-
-  const ungendered =
-    pokemon.gender.female === pokemon.gender.male &&
-    pokemon.gender.male === "0%";
-
-  return {
-    key,
-    name,
-    desc: pokemon.classification || "No description exists.",
-    abilities: {
-      first: pokemon.abilities.first,
-      second: pokemon.abilities.second,
-      hidden: pokemon.abilities.hidden,
-    },
-    attackerType,
-    baseStats,
-    baseTotal: baseStatsTotal,
-    effectiveBaseTotal,
-    evolutionLevel: pokemon.evolutionLevel,
-    evYields: pokemon.evYields,
-    flavorText: pokemon.flavorTexts[0],
-    gender: ungendered ? null : pokemon.gender,
-    height: pokemon.height,
-    weight: pokemon.weight,
-    dexNumber: pokemon.num,
-    variants: (pokemon.otherFormes || []) as PokemonKey[],
-    sprite,
-    shinySprite,
-    weaknesses: computeWeaknesses(pokemon.types),
-    rarity: pokemon.mythical
-      ? "mythical"
-      : pokemon.legendary
-      ? "legendary"
-      : null,
-    type: [
-      pokemon.types[0].name.toLowerCase(),
-      pokemon.types[1]?.name?.toLowerCase(),
-    ].filter(Boolean) as unknown as Pokemon["type"],
-    catchRate: [
-      pokemon.catchRate!.base,
-      pokemon.catchRate!.percentageWithOrdinaryPokeballAtFullHealth,
-    ],
   };
 }
 
@@ -162,10 +81,6 @@ export function formatKg(kg: number) {
   return `${(kg * 2.20462).toFixed(1)} lbs`;
 }
 
-export function removeNonAlphanumeric(value: string) {
-  return value.replace(/[^a-z0-9]/gi, "");
-}
-
 export function idify(str: string) {
   return str
     .replace(/\s+/g, "-")
@@ -173,23 +88,33 @@ export function idify(str: string) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-export function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+export function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 export function padDexNumber(dexNo: number): string {
   const str = `${dexNo}`;
-  const missingChars = 3 - str.length;
+  const missingChars = 4 - str.length;
 
   return "0".repeat(missingChars) + str;
 }
 
-export const makeIconSprite = (key: string) =>
-  `${SPRITE_BASE}/home-centered/${key}.png`;
+type SpriteVariant = "home-centered";
+
+type SpriteOptions = {
+  readonly shiny?: boolean;
+  readonly variant?: SpriteVariant;
+};
+
+export function buildSprite(key: string, options: SpriteOptions = {}) {
+  const { shiny = false, variant = "home-centered" } = options;
+  const folder = shiny ? `${variant}-shiny` : variant;
+  return `${SPRITE_BASE}/${folder}/${key.replaceAll("-", "")}.png`;
+}
 
 export function partition<K extends string, T extends object>(
   arr: T[],
-  partitionKey: (item: T) => K
+  partitionKey: (item: T) => K,
 ): Map<K, T[]> {
   const map = new Map<K, T[]>();
   arr.forEach((item) => {
@@ -200,4 +125,13 @@ export function partition<K extends string, T extends object>(
   });
 
   return map;
+}
+
+export function capitalize(str: string) {
+  return str
+    .replaceAll("-", " ")
+    .split(/\s+/g)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
