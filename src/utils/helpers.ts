@@ -108,9 +108,21 @@ type SpriteOptions = {
 };
 
 export function buildSprite(key: string, options: SpriteOptions = {}) {
-  const { shiny = false, variant = "home-centered" } = options;
+  const { shiny = false, variant = "home-centered", altForm = false } = options;
   const folder = shiny ? `${variant}-shiny` : variant;
-  if (!options.altForm) key = key.replaceAll("-", "");
+
+  if (altForm) {
+    // "charizard-mega-x" → "charizard-megax"
+    const firstHyphenIndex = key.indexOf("-");
+    if (firstHyphenIndex !== -1) {
+      const base = key.slice(0, firstHyphenIndex);
+      const suffix = key.slice(firstHyphenIndex + 1).replaceAll("-", "");
+      key = `${base}-${suffix}`;
+    }
+  } else {
+    key = key.replaceAll("-", "");
+  }
+
   return `${SPRITE_BASE}/${folder}/${key}.png`;
 }
 
