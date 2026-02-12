@@ -67,6 +67,22 @@ type PokeAPIMove = {
     language: { name: string };
   }>;
   target: { name: string };
+  generation: { name: string };
+  meta: {
+    ailment: { name: string };
+    ailment_chance: number;
+    flinch_chance: number;
+    crit_rate: number;
+    stat_chance: number;
+  };
+  stat_changes: Array<{
+    change: number;
+    stat: { name: string };
+  }>;
+  learned_by_pokemon: Array<{
+    name: string;
+    url: string;
+  }>;
 };
 
 type PokeAPIAbility = {
@@ -96,7 +112,7 @@ import {
 } from "src/utils/types";
 import type { MoveKey } from "src/data/moves";
 import type { Generation } from "src/data/generations";
-import { species, speciesKeys } from "src/data/species";
+import { FormKey, forms, species, speciesKeys } from "src/data/species";
 import {
   buildSprite,
   computeWeaknessesFromTypes,
@@ -223,10 +239,9 @@ class PokeAPIClient {
     });
   }
 
-  async getPokemon(key: SpeciesKey, properName: string): Promise<Pokemon> {
+  async getPokemon(key: SpeciesKey, form?: string): Promise<Pokemon> {
     const speciesInfo = species[key];
-
-    const pokemonIdentifier = speciesInfo.baseForm || key;
+    const pokemonIdentifier = form || speciesInfo.baseForm || key;
 
     const [speciesData, pokemonData] = await Promise.all([
       this.getPokemonSpeciesRaw(key),
@@ -289,8 +304,12 @@ class PokeAPIClient {
         ? "legendary"
         : null;
 
-    const sprite = buildSprite(key);
-    const shinySprite = buildSprite(key, { shiny: true });
+    const isAltForm = !!form;
+    const sprite = buildSprite(pokemonIdentifier, { altForm: isAltForm });
+    const shinySprite = buildSprite(pokemonIdentifier, {
+      shiny: true,
+      altForm: isAltForm,
+    });
 
     const evYields: Record<Stat, number> = Object.fromEntries(
       pokemonData.stats.map((statEntry) => [
@@ -304,12 +323,9 @@ class PokeAPIClient {
       baseStatsTotal,
     });
 
-    const speciesLookup = species[pokemonData.name as SpeciesKey];
-    const variants = (speciesLookup?.forms || []) as SpeciesKey[];
-
     return {
       key,
-      name: properName,
+      name: speciesInfo.name,
       desc: findEnglish(speciesData.genera).genus,
       abilities,
       attackerType,
@@ -323,7 +339,7 @@ class PokeAPIClient {
       height: pokemonData.height / 10,
       weight: pokemonData.weight / 10,
       dexNumber: speciesData.id,
-      variants,
+      variants: speciesInfo.forms || [],
       sprite,
       shinySprite,
       weaknesses,
@@ -343,14 +359,57 @@ class PokeAPIClient {
     const effectEntry = findEnglish(moveData.effect_entries);
     const nameEntry = findEnglish(moveData.names);
 
+    const generationMatch = moveData.generation.name.match(/generation-(\w+)/);
+    const generation = romanNumerals[(generationMatch as RegExpMatchArray)[1]];
+
+    let description = effectEntry.short_effect;
+    const substitutions: Record<string, string | number> = {
+      effect_chance: moveData.meta.stat_chance || moveData.meta.ailment_chance,
+      power: moveData.power || 0,
+      accuracy: moveData.accuracy || 0,
+    };
+
+    Object.entries(substitutions).forEach(([key, value]) => {
+      description = description.replace(
+        new RegExp(`\\$${key}`, "g"),
+        String(value),
+      );
+    });
+
+    const used = new Set<string>();
+
+    const learnedBy: PokemonFragment[] = moveData.learned_by_pokemon
+      .map((pokemon) => {
+        const key =
+          forms[pokemon.name as FormKey] || (pokemon.name as SpeciesKey);
+        const speciesData = species[key];
+        if (!speciesData || used.has(key)) return null;
+
+        used.add(key);
+
+        return {
+          key,
+          name: speciesData.name,
+          dexNumber: -1,
+          sprite: buildSprite(key),
+          type: speciesData.types as [Type] | [Type, Type],
+          baseTotal: speciesData.base,
+          effectiveBaseTotal: speciesData.eff,
+        };
+      })
+      .filter((item) => item !== null)
+      .sort((a, b) => a.dexNumber - b.dexNumber);
+
     return {
       key,
       ...localMove,
       name: nameEntry.name,
       pp: moveData.pp,
       priority: moveData.priority,
-      target: moveData.target.name,
-      desc: effectEntry.short_effect,
+      target: targets[moveData.target.name] || moveData.target.name,
+      desc: description,
+      generation,
+      learnedBy,
     };
   }
 
@@ -389,5 +448,36 @@ class PokeAPIClient {
     return map;
   }
 }
+
+const romanNumerals: Record<string, number> = {
+  i: 1,
+  ii: 2,
+  iii: 3,
+  iv: 4,
+  v: 5,
+  vi: 6,
+  vii: 7,
+  viii: 8,
+  ix: 9,
+};
+
+const targets: Record<string, string | undefined> = {
+  "specific-move": "User",
+  "selected-pokemon-me-first": "Single",
+  ally: "Teammate",
+  "users-field": "Team",
+  "user-or-ally": "User or Teammate",
+  "opponents-field": "Enemy Team",
+  user: "User",
+  "random-opponent": "Random",
+  "all-other-pokemon": "All",
+  "selected-pokemon": "Single",
+  "all-opponents": "Enemies",
+  "entire-field": "Field",
+  "user-and-allies": "Team",
+  "all-pokemon": "Field",
+  "all-allies": "Teammates",
+  "fainting-pokemon": "User",
+};
 
 export const pokeapi = new PokeAPIClient();

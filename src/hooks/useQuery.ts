@@ -8,7 +8,7 @@ type UseQueryResult<T> = {
 
 export default function useQuery<T>(
   queryFn: () => Promise<T>,
-  deps: Array<string | undefined>,
+  deps: Array<string | boolean | undefined>,
   enabled = true,
 ): UseQueryResult<T> {
   const [data, setData] = useState<T | undefined>(undefined);
@@ -28,6 +28,8 @@ export default function useQuery<T>(
         setData(result);
         setError(undefined);
       } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
         setError((error as Error).message);
         setData(undefined);
       } finally {

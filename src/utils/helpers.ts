@@ -104,12 +104,26 @@ type SpriteVariant = "home-centered";
 type SpriteOptions = {
   readonly shiny?: boolean;
   readonly variant?: SpriteVariant;
+  readonly altForm?: boolean;
 };
 
 export function buildSprite(key: string, options: SpriteOptions = {}) {
-  const { shiny = false, variant = "home-centered" } = options;
+  const { shiny = false, variant = "home-centered", altForm = false } = options;
   const folder = shiny ? `${variant}-shiny` : variant;
-  return `${SPRITE_BASE}/${folder}/${key.replaceAll("-", "")}.png`;
+
+  if (altForm) {
+    // "charizard-mega-x" → "charizard-megax"
+    const firstHyphenIndex = key.indexOf("-");
+    if (firstHyphenIndex !== -1) {
+      const base = key.slice(0, firstHyphenIndex);
+      const suffix = key.slice(firstHyphenIndex + 1).replaceAll("-", "");
+      key = `${base}-${suffix}`;
+    }
+  } else {
+    key = key.replaceAll("-", "");
+  }
+
+  return `${SPRITE_BASE}/${folder}/${key}.png`;
 }
 
 export function partition<K extends string, T extends object>(
@@ -135,3 +149,9 @@ export function capitalize(str: string) {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
+
+export const stringCmp = (a: string, b: string) =>
+  a.localeCompare(b, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });

@@ -7,6 +7,7 @@ import useQuery from "src/hooks/useQuery";
 
 type Config = {
   key: string;
+  form?: string;
   skip?: boolean;
 };
 
@@ -16,15 +17,15 @@ type Result = {
   moves: Map<Generation, MoveFragment[]> | undefined;
 };
 
-export default function useGetMoveset({ key, skip }: Config): Result {
-  const baseEvolution = species[key as SpeciesKey]?.baseEvolution;
+export default function useGetMoveset({ key, form, skip }: Config): Result {
+  const speciesInfo = species[key as SpeciesKey];
+  const baseEvolution = speciesInfo?.baseEvolution;
 
   const { data, loading, error } = useQuery(
     async () => {
       let moves = new Map<Generation, MoveFragment[]>();
 
-      const speciesInfo = species[key as SpeciesKey];
-      const identifier = speciesInfo.baseForm || (key as SpeciesKey);
+      const identifier = form || speciesInfo.baseForm || (key as SpeciesKey);
 
       const baseMoves = await pokeapi.getMovesetForPokemon(identifier);
       moves = mergeMaps(moves, baseMoves, mergeMoveFragments);
@@ -42,7 +43,7 @@ export default function useGetMoveset({ key, skip }: Config): Result {
 
       return dedupeMovesMap(moves);
     },
-    [key, baseEvolution],
+    [key, form, baseEvolution],
     !skip,
   );
 

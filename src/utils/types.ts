@@ -82,7 +82,7 @@ type Pokemon = {
   readonly height: number;
   readonly weight: number;
   readonly dexNumber: number;
-  readonly variants: SpeciesKey[];
+  readonly variants: readonly string[];
   readonly sprite: string;
   readonly shinySprite: string;
   readonly weaknesses: {
@@ -120,6 +120,8 @@ type Move = {
   readonly type: Type;
   readonly target: string;
   readonly desc: string;
+  readonly generation: number;
+  readonly learnedBy: PokemonFragment[];
 };
 
 type MoveFragment = Pick<
