@@ -28,6 +28,8 @@ export default function useQuery<T>(
         setData(result);
         setError(undefined);
       } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
         setError((error as Error).message);
         setData(undefined);
       } finally {

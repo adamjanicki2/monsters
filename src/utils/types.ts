@@ -120,6 +120,8 @@ type Move = {
   readonly type: Type;
   readonly target: string;
   readonly desc: string;
+  readonly generation: number;
+  readonly learnedBy: PokemonFragment[];
 };
 
 type MoveFragment = Pick<

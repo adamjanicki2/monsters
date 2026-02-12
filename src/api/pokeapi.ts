@@ -67,6 +67,22 @@ type PokeAPIMove = {
     language: { name: string };
   }>;
   target: { name: string };
+  generation: { name: string };
+  meta: {
+    ailment: { name: string };
+    ailment_chance: number;
+    flinch_chance: number;
+    crit_rate: number;
+    stat_chance: number;
+  };
+  stat_changes: Array<{
+    change: number;
+    stat: { name: string };
+  }>;
+  learned_by_pokemon: Array<{
+    name: string;
+    url: string;
+  }>;
 };
 
 type PokeAPIAbility = {
@@ -96,7 +112,7 @@ import {
 } from "src/utils/types";
 import type { MoveKey } from "src/data/moves";
 import type { Generation } from "src/data/generations";
-import { species, speciesKeys } from "src/data/species";
+import { FormKey, forms, species, speciesKeys } from "src/data/species";
 import {
   buildSprite,
   computeWeaknessesFromTypes,
@@ -343,6 +359,47 @@ class PokeAPIClient {
     const effectEntry = findEnglish(moveData.effect_entries);
     const nameEntry = findEnglish(moveData.names);
 
+    const generationMatch = moveData.generation.name.match(/generation-(\w+)/);
+    const generation = romanNumerals[(generationMatch as RegExpMatchArray)[1]];
+
+    let description = effectEntry.short_effect;
+    const substitutions: Record<string, string | number> = {
+      effect_chance: moveData.meta.stat_chance || moveData.meta.ailment_chance,
+      power: moveData.power || 0,
+      accuracy: moveData.accuracy || 0,
+    };
+
+    Object.entries(substitutions).forEach(([key, value]) => {
+      description = description.replace(
+        new RegExp(`\\$${key}`, "g"),
+        String(value),
+      );
+    });
+
+    const used = new Set<string>();
+
+    const learnedBy: PokemonFragment[] = moveData.learned_by_pokemon
+      .map((pokemon) => {
+        const key =
+          forms[pokemon.name as FormKey] || (pokemon.name as SpeciesKey);
+        const speciesData = species[key];
+        if (!speciesData || used.has(key)) return null;
+
+        used.add(key);
+
+        return {
+          key,
+          name: speciesData.name,
+          dexNumber: -1,
+          sprite: buildSprite(key),
+          type: speciesData.types as [Type] | [Type, Type],
+          baseTotal: speciesData.base,
+          effectiveBaseTotal: speciesData.eff,
+        };
+      })
+      .filter((item) => item !== null)
+      .sort((a, b) => a.dexNumber - b.dexNumber);
+
     return {
       key,
       ...localMove,
@@ -350,7 +407,9 @@ class PokeAPIClient {
       pp: moveData.pp,
       priority: moveData.priority,
       target: moveData.target.name,
-      desc: effectEntry.short_effect,
+      desc: description,
+      generation,
+      learnedBy,
     };
   }
 
@@ -389,5 +448,17 @@ class PokeAPIClient {
     return map;
   }
 }
+
+const romanNumerals: Record<string, number> = {
+  i: 1,
+  ii: 2,
+  iii: 3,
+  iv: 4,
+  v: 5,
+  vi: 6,
+  vii: 7,
+  viii: 8,
+  ix: 9,
+};
 
 export const pokeapi = new PokeAPIClient();

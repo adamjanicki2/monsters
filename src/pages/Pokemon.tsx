@@ -570,16 +570,12 @@ function MovesSection({
             {
               key: "power",
               header: "Power",
-              render: ({ power }) => (!power || power <= 0 ? "—" : power),
+              render: ({ power }) => power || "—",
             },
             {
               key: "accuracy",
               header: "Accuracy",
-              render: ({ accuracy, category }) => {
-                if (!accuracy && category === "status") return "—";
-                if (accuracy === null) return "∞";
-                return accuracy;
-              },
+              render: ({ accuracy }) => accuracy || "—",
             },
           ]}
           rowActions={(item) => ({ to: `/move/${item.key}` })}
