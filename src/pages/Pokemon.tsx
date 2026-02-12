@@ -32,6 +32,7 @@ import {
   formatKg,
   formatMeters,
   padDexNumber,
+  stringCmp,
 } from "src/utils/helpers";
 import {
   LearnMethod,
@@ -492,7 +493,7 @@ function MovesSection({
     if (!sortKey || sortDirection === "none") return movesetForGeneration;
     const directionMultiplier = sortDirection === "asc" ? 1 : -1;
     return [...movesetForGeneration].sort(
-      (a, b) => compareValues(a[sortKey], b[sortKey]) * directionMultiplier,
+      (a, b) => stringCmp(a[sortKey], b[sortKey]) * directionMultiplier,
     );
   }, [movesetForGeneration, sortDirection, sortKey]);
   const tableItems = useMemo(
@@ -603,17 +604,6 @@ const learnMethodHeaders: Record<LearnMethod, string> = {
 };
 
 type MoveSortKey = "name" | "method" | "type" | "category";
-
-const compareValues = (a: unknown, b: unknown) => {
-  if (a == null && b == null) return 0;
-  if (a == null) return 1;
-  if (b == null) return -1;
-  if (typeof a === "number" && typeof b === "number") return a - b;
-  return String(a).localeCompare(String(b), undefined, {
-    numeric: true,
-    sensitivity: "base",
-  });
-};
 
 /* ---------------------------------- */
 /* Helpers                            */

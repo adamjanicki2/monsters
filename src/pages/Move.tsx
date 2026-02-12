@@ -8,7 +8,10 @@ import TypeBadge from "src/components/TypeBadge";
 import moves, { type MoveKey } from "src/data/moves";
 import useGetMove from "src/hooks/useGetMove";
 import NotFound from "src/pages/NotFound";
+import { stringCmp } from "src/utils/helpers";
 import type { Move as MoveType } from "src/utils/types";
+
+type PokemonSortKey = "name";
 
 export default function Move() {
   const params = usePathParams();
@@ -61,7 +64,7 @@ function MoveInfo({ move }: { move: MoveType }) {
     if (!sortKey || sortDirection === "none") return move.learnedBy;
     const directionMultiplier = sortDirection === "asc" ? 1 : -1;
     return [...move.learnedBy].sort(
-      (a, b) => compareValues(a[sortKey], b[sortKey]) * directionMultiplier,
+      (a, b) => stringCmp(a[sortKey], b[sortKey]) * directionMultiplier,
     );
   }, [move.learnedBy, sortDirection, sortKey]);
 
@@ -181,11 +184,3 @@ function MoveInfo({ move }: { move: MoveType }) {
     </>
   );
 }
-
-type PokemonSortKey = "name";
-
-const compareValues = (a: string, b: string) =>
-  String(a).localeCompare(String(b), undefined, {
-    numeric: true,
-    sensitivity: "base",
-  });

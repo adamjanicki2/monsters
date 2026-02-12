@@ -149,3 +149,9 @@ export function capitalize(str: string) {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
+
+export const stringCmp = (a: string, b: string) =>
+  a.localeCompare(b, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
