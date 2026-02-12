@@ -182,15 +182,10 @@ function MoveInfo({ move }: { move: MoveType }) {
   );
 }
 
-type PokemonSortKey = "dexNumber" | "name";
+type PokemonSortKey = "name";
 
-const compareValues = (a: unknown, b: unknown) => {
-  if (a == null && b == null) return 0;
-  if (a == null) return 1;
-  if (b == null) return -1;
-  if (typeof a === "number" && typeof b === "number") return a - b;
-  return String(a).localeCompare(String(b), undefined, {
+const compareValues = (a: string, b: string) =>
+  String(a).localeCompare(String(b), undefined, {
     numeric: true,
     sensitivity: "base",
   });
-};
