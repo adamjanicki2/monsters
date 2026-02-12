@@ -11,6 +11,7 @@ import {
   ui,
   usePathParams,
   useScrollToHash,
+  useSearchParams,
 } from "@adamjanicki/ui";
 import { chevronLeft, chevronRight } from "@adamjanicki/ui/icons";
 import React, { useMemo, useState } from "react";
@@ -25,7 +26,13 @@ import { species as dex, type SpeciesKey, speciesKeys } from "src/data/species";
 import useGetMoveset from "src/hooks/useGetMoveset";
 import useGetPokemon from "src/hooks/useGetPokemon";
 import NotFound from "src/pages/NotFound";
-import { clamp, formatKg, formatMeters, padDexNumber } from "src/utils/helpers";
+import {
+  capitalize,
+  clamp,
+  formatKg,
+  formatMeters,
+  padDexNumber,
+} from "src/utils/helpers";
 import {
   LearnMethod,
   type Pokemon,
@@ -38,12 +45,19 @@ import {
 
 export default function Pokemon() {
   const params = usePathParams();
-  const key = params.slug as string;
-  const properName = dex[key as SpeciesKey]?.name as string | undefined;
+  const [searchParams] = useSearchParams();
+  const baseKey = params.slug as string;
+  const formParam = searchParams.form as string | undefined;
+  const properName = dex[baseKey as SpeciesKey]?.name as string | undefined;
 
-  const { pokemon, loading, error } = useGetPokemon({ key, properName });
+  const { pokemon, loading, error } = useGetPokemon({
+    key: baseKey,
+    form: formParam,
+    skip: !properName,
+  });
   const movesResult = useGetMoveset({
-    key: key as SpeciesKey,
+    key: baseKey as SpeciesKey,
+    form: formParam,
     skip: !properName,
   });
 
@@ -213,6 +227,13 @@ function IntroInfo({ pokemon }: { pokemon: Pokemon }) {
 
 function SpritePanel({ pokemon }: { pokemon: Pokemon }) {
   const [showShiny, setShowShiny] = useState(false);
+  const params = usePathParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const baseKey = params.slug as string;
+  const currentFormKey = (searchParams.form as string | undefined) || baseKey;
+
+  const formOptions = [baseKey, ...pokemon.variants];
+  const hasVariants = pokemon.variants.length > 0;
 
   return (
     <Box vfx={{ axis: "y", gap: "s", align: "center" }}>
@@ -224,6 +245,24 @@ function SpritePanel({ pokemon }: { pokemon: Pokemon }) {
       <Button size="small" onClick={() => setShowShiny(!showShiny)}>
         {showShiny ? "Normal" : "Shiny"} sprite
       </Button>
+
+      {hasVariants && (
+        <Select
+          aria-label="Pokemon form"
+          value={currentFormKey}
+          options={formOptions}
+          onSelect={(formKey) => {
+            if (formKey === baseKey) {
+              setSearchParams({});
+            } else {
+              setSearchParams({ form: formKey });
+            }
+          }}
+          getOptionLabel={(formKey) =>
+            formatFormLabel(pokemon.name, baseKey, formKey)
+          }
+        />
+      )}
     </Box>
   );
 }
@@ -658,3 +697,16 @@ const STAT_LABELS = {
   "special-attack": "Sp. Atk",
   "special-defense": "Sp. Def",
 } as const;
+
+function formatFormLabel(
+  pokemonName: string,
+  baseKey: string,
+  formKey: string,
+): string {
+  if (formKey === baseKey) {
+    return `${pokemonName} (Base Form)`;
+  }
+  const suffix = formKey.slice(baseKey.length + 1);
+  const formattedSuffix = capitalize(suffix);
+  return `${pokemonName} (${formattedSuffix})`;
+}

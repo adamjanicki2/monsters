@@ -4,14 +4,15 @@ import useQuery from "src/hooks/useQuery";
 
 type Config = {
   key: string;
-  properName?: string;
+  form?: string;
+  skip: boolean;
 };
 
-export default function useGetPokemon({ key, properName }: Config) {
+export default function useGetPokemon({ key, form, skip }: Config) {
   const { data, loading, error } = useQuery(
-    () => pokeapi.getPokemon(key as SpeciesKey, properName!),
-    [key, properName],
-    !!properName,
+    () => pokeapi.getPokemon(key as SpeciesKey, form),
+    [key, form],
+    !skip,
   );
 
   return { pokemon: data, loading, error };

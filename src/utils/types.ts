@@ -82,7 +82,7 @@ type Pokemon = {
   readonly height: number;
   readonly weight: number;
   readonly dexNumber: number;
-  readonly variants: SpeciesKey[];
+  readonly variants: readonly string[];
   readonly sprite: string;
   readonly shinySprite: string;
   readonly weaknesses: {

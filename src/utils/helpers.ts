@@ -104,12 +104,14 @@ type SpriteVariant = "home-centered";
 type SpriteOptions = {
   readonly shiny?: boolean;
   readonly variant?: SpriteVariant;
+  readonly altForm?: boolean;
 };
 
 export function buildSprite(key: string, options: SpriteOptions = {}) {
   const { shiny = false, variant = "home-centered" } = options;
   const folder = shiny ? `${variant}-shiny` : variant;
-  return `${SPRITE_BASE}/${folder}/${key.replaceAll("-", "")}.png`;
+  if (!options.altForm) key = key.replaceAll("-", "");
+  return `${SPRITE_BASE}/${folder}/${key}.png`;
 }
 
 export function partition<K extends string, T extends object>(

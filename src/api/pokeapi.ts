@@ -223,10 +223,9 @@ class PokeAPIClient {
     });
   }
 
-  async getPokemon(key: SpeciesKey, properName: string): Promise<Pokemon> {
+  async getPokemon(key: SpeciesKey, form?: string): Promise<Pokemon> {
     const speciesInfo = species[key];
-
-    const pokemonIdentifier = speciesInfo.baseForm || key;
+    const pokemonIdentifier = form || speciesInfo.baseForm || key;
 
     const [speciesData, pokemonData] = await Promise.all([
       this.getPokemonSpeciesRaw(key),
@@ -289,8 +288,12 @@ class PokeAPIClient {
         ? "legendary"
         : null;
 
-    const sprite = buildSprite(key);
-    const shinySprite = buildSprite(key, { shiny: true });
+    const isAltForm = !!form;
+    const sprite = buildSprite(pokemonIdentifier, { altForm: isAltForm });
+    const shinySprite = buildSprite(pokemonIdentifier, {
+      shiny: true,
+      altForm: isAltForm,
+    });
 
     const evYields: Record<Stat, number> = Object.fromEntries(
       pokemonData.stats.map((statEntry) => [
@@ -304,12 +307,9 @@ class PokeAPIClient {
       baseStatsTotal,
     });
 
-    const speciesLookup = species[pokemonData.name as SpeciesKey];
-    const variants = (speciesLookup?.forms || []) as SpeciesKey[];
-
     return {
       key,
-      name: properName,
+      name: speciesInfo.name,
       desc: findEnglish(speciesData.genera).genus,
       abilities,
       attackerType,
@@ -323,7 +323,7 @@ class PokeAPIClient {
       height: pokemonData.height / 10,
       weight: pokemonData.weight / 10,
       dexNumber: speciesData.id,
-      variants,
+      variants: speciesInfo.forms || [],
       sprite,
       shinySprite,
       weaknesses,
