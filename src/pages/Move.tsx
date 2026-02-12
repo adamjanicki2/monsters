@@ -9,7 +9,6 @@ import moves, { type MoveKey } from "src/data/moves";
 import useGetMove from "src/hooks/useGetMove";
 import NotFound from "src/pages/NotFound";
 import type { Move as MoveType } from "src/utils/types";
-import { capitalize } from "src/utils/helpers";
 
 export default function Move() {
   const params = usePathParams();
@@ -109,7 +108,7 @@ function MoveInfo({ move }: { move: MoveType }) {
                   move.priority > 0 ? `+${move.priority}` : move.priority,
                 ]
               : null,
-            ["Target", capitalize(move.target)],
+            ["Target", move.target],
             ["Generation", move.generation],
           ]}
         />

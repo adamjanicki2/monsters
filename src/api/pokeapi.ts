@@ -406,7 +406,7 @@ class PokeAPIClient {
       name: nameEntry.name,
       pp: moveData.pp,
       priority: moveData.priority,
-      target: moveData.target.name,
+      target: targets[moveData.target.name] || moveData.target.name,
       desc: description,
       generation,
       learnedBy,
@@ -459,6 +459,25 @@ const romanNumerals: Record<string, number> = {
   vii: 7,
   viii: 8,
   ix: 9,
+};
+
+const targets: Record<string, string | undefined> = {
+  "specific-move": "User",
+  "selected-pokemon-me-first": "Single",
+  ally: "Teammate",
+  "users-field": "Team",
+  "user-or-ally": "User or Teammate",
+  "opponents-field": "Enemy Team",
+  user: "User",
+  "random-opponent": "Random",
+  "all-other-pokemon": "All",
+  "selected-pokemon": "Single",
+  "all-opponents": "Enemies",
+  "entire-field": "Field",
+  "user-and-allies": "Team",
+  "all-pokemon": "Field",
+  "all-allies": "Teammates",
+  "fainting-pokemon": "User",
 };
 
 export const pokeapi = new PokeAPIClient();
