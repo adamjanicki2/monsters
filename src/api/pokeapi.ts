@@ -305,8 +305,10 @@ class PokeAPIClient {
         : null;
 
     const isAltForm = !!form;
-    const sprite = buildSprite(pokemonIdentifier, { altForm: isAltForm });
-    const shinySprite = buildSprite(pokemonIdentifier, {
+    const sprite = buildSprite(isAltForm ? pokemonIdentifier : key, {
+      altForm: isAltForm,
+    });
+    const shinySprite = buildSprite(isAltForm ? pokemonIdentifier : key, {
       shiny: true,
       altForm: isAltForm,
     });
